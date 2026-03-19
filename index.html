@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>APEX // FLUX V4.2 (BLUEPRINT EDITION)</title>
+    <link rel="icon" type="image/png" href="flux-icon.png?v=99">
+    <link rel="apple-touch-icon" href="flux-icon.png?v=99">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="apex-theme">
+
+    <div id="guardian-overlay" class="overlay">
+    <div class="auth-card">
+        <div class="auth-header">
+            <h1 class="brand-auth">APEX <span class="flux-span">FLUX</span></h1>
+            <p class="sentry-tag">GUARDIAN SENTRY // SYSTEM ACCESS</p>
+        </div>
+        <div class="pin-box">
+            <input type="password" id="pin-input" placeholder="****" readonly>
+        </div>
+        <div class="numpad">
+            <button onclick="inputPin(1)">1</button>
+            <button onclick="inputPin(2)">2</button>
+            <button onclick="inputPin(3)">3</button>
+            <button onclick="inputPin(4)">4</button>
+            <button onclick="inputPin(5)">5</button>
+            <button onclick="inputPin(6)">6</button>
+            <button onclick="inputPin(7)">7</button>
+            <button onclick="inputPin(8)">8</button>
+            <button onclick="inputPin(9)">9</button>
+            <button onclick="clearPin()" class="btn-alt">C</button>
+            <button onclick="inputPin(0)">0</button>
+            <button onclick="verifyPin()" class="btn-primary">➔</button>
+        </div>
+    </div>
+</div>
+
+    <div id="secure-modal" class="modal-overlay" style="display:none;">
+        <div class="auth-card">
+            <h3 class="neon-text">AUTHORIZATION</h3>
+            <input type="password" id="modal-pin" class="modal-input" maxlength="4" placeholder="PIN">
+            <div class="modal-actions">
+                <button onclick="closeSecureModal()">CANCEL</button>
+                <button onclick="confirmSecureToggle()" class="btn-primary">CONFIRM</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-wrapper">
+        <header class="main-hud">
+            <div class="brand">APEX <span class="flux-span">// FLUX</span></div>
+            <div class="sys-status">STATUS: <span id="sys-msg">OPTIMAL</span> // <span id="tier-name" class="neon-text">CAD INTERN</span></div>
+        </header>
+
+        <main class="grid-container">
+            <aside class="vitals-col">
+                <section id="balance-card" class="card">
+                    <header>LIQUIDITY ENGINE</header>
+                    <div class="gauge-container">
+                        <svg viewBox="0 0 100 50" class="gauge">
+                            <path class="gauge-track" d="M10 45 A 40 40 0 0 1 90 45" />
+                            <path id="gauge-fill" class="gauge-path" d="M10 45 A 40 40 0 0 1 90 45" />
+                        </svg>
+                        <div class="bal-display">
+                            <span class="currency">KES</span>
+                            <span id="bal-amount" class="blurred">0.00</span>
+                        </div>
+                    </div>
+                    <button id="toggle-privacy" class="reveal-btn" onclick="openSecureModal()">REVEAL DATA</button>
+                </section>
+
+                <section class="card">
+                    <header>ENGINEERING ANALYTICS</header>
+                    <div class="stat-row">XP: <span id="xp-display" class="neon-text">0</span></div>
+                    <div class="stat-row">BURN: <span id="burn-rate">0.00</span>/hr</div>
+                    <div class="stat-row">ETA: <span id="days-left" class="neon-text">--</span> DAYS</div>
+                </section>
+                
+                <section class="card report-card">
+                    <header>WEEKLY DIAGNOSTIC</header>
+                    <div id="weekly-report-content">
+                        <p class="dim-text">Awaiting data...</p>
+                    </div>
+                </section>
+            </aside>
+
+            <section class="modules-col">
+                <nav class="module-nav">
+                    <button onclick="showModule('ingest')" class="nav-btn active">SHREDDER</button>
+                    <button onclick="showModule('ledger')" class="nav-btn">VAULT</button>
+                    <button onclick="showModule('viz')" class="nav-btn">VORTEX</button>
+                </nav>
+
+                <div id="mod-ingest" class="module-content">
+                    <div class="ingestor-header"><h3>M-PESA SHREDDER</h3></div>
+                    <div class="textarea-wrapper">
+                        <textarea id="sms-area" placeholder="Paste full text here..."></textarea>
+                        <div class="scanner-line"></div>
+                    </div>
+                    <button class="action-btn" onclick="shredSMS()">INITIALIZE SYNC</button>
+                    
+                    <div class="history-split">
+                        <div class="history-col">
+                            <header>INBOUND (RECEIPTS)</header>
+                            <div id="inbound-list" class="mini-ledger"></div>
+                        </div>
+                        <div class="history-col">
+                            <header>OUTBOUND (TRADES)</header>
+                            <div id="outbound-list" class="mini-ledger"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="mod-ledger" class="module-content" style="display:none;">
+                    <h3>MANUAL VAULT</h3>
+                    <div class="entry-form">
+                        <input type="text" id="item-name" placeholder="Item Label">
+                        <input type="number" id="item-cost" placeholder="KES">
+                        <select id="item-category">
+                            <option value="Food">Food</option>
+                            <option value="Transport">Transport</option>
+                            <option value="Academic">Academic</option>
+                            <option value="Utility">Utility</option>
+                        </select>
+                        <button class="action-btn" onclick="addManualEntry()">LOG ENTRY</button>
+                    </div>
+                    <hr style="border:0; border-top:1px solid var(--border); margin:20px 0;">
+                    <div class="export-zone">
+                        <header style="border:0; font-size:0.6rem; color:var(--mech-blue);">DATA PERSISTENCE</header>
+                        <button class="action-btn btn-alt" onclick="exportBlueprint()">EXPORT LOG (.TXT)</button>
+                    </div>
+                </div>
+
+                <div id="mod-viz" class="module-content" style="display:none;">
+                    <h3>VORTEX TRENDS</h3>
+                    <canvas id="fluxChart"></canvas>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="main.js"></script>
+    <script src="scrpits/flux-gamify.js"></script>
+    <script src="scripts/flux-ingest.js"></script>
+    <script src="scripts/flux-optimizer.js"></script>
+    <script src="scripts/flux-viz.js"></script>
+</body>
+</html>
