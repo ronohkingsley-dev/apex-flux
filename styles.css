@@ -246,3 +246,29 @@ textarea {
     left: 0 !important;
     top: 0 !important;
 }
+/* --- APEX // FLUX VERTICAL STACK FIX --- */
+@media (max-width: 850px) {
+    /* 1. Find the main container holding your dashboard and force it to stack */
+    .dashboard, .main-content, .grid-container, .wrapper {
+        display: flex !important;
+        flex-direction: column !important; /* Forces side-by-side to go top-to-bottom */
+        gap: 20px;
+        padding: 15px;
+    }
+
+    /* 2. Target the specific sections (Shredder, Vault, Vortex, Trades, etc.) */
+    .shredder-section, .vault-panel, .vortex-module, 
+    .inbound-receipts, .outbound-trades, .column, .side-panel {
+        width: 100% !important;   /* Take up the full width of the phone */
+        max-width: 100% !important;
+        margin: 0 0 20px 0 !important;
+        position: static !important; /* Prevents them from floating off-screen */
+        display: block !important;
+    }
+
+    /* 3. Fix the "Receipts & Trades" side-by-side issue */
+    .row, .flex-row {
+        flex-direction: column !important;
+    }
+}
+
