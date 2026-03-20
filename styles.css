@@ -148,3 +148,25 @@ textarea {
     color: white;
     border-color: var(--danger);
 }
+/* Simple Mobile Optimization */
+@media (max-width: 600px) {
+  .dashboard-container {
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+  }
+  
+  .gauge-container {
+    width: 100%;
+    margin-bottom: 20px;
+  }
+
+  button {
+    height: 50px; /* Larger tap targets for fingers */
+    font-size: 1.1rem;
+  }
+
+  .sms-input-area {
+    font-size: 16px; /* Prevents iOS from zooming in on focus */
+  }
+}
