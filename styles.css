@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+
 :root {
     --bg-deep: #05070a;
     --bg-card: #0f1218;
@@ -12,7 +14,11 @@
 body { background: var(--bg-deep); color: #fff; font-family: 'Rajdhani', sans-serif; margin: 0; overflow: hidden; }
 .neon-text { color: var(--neon-green); text-shadow: 0 0 10px rgba(0,255,65,0.4); }
 .dim-text { color: var(--text-dim); font-size: 0.8rem; }
-.blurred { filter: blur(12px); transition: 0.5s; }
+
+.blurred {
+    filter: blur(10px);
+    transition: filter 0.4s ease;
+}
 
 .dashboard-wrapper { padding: 20px; height: 100vh; display: flex; flex-direction: column; }
 .grid-container { display: grid; grid-template-columns: 320px 1fr; gap: 20px; flex-grow: 1; }
@@ -42,6 +48,21 @@ textarea {
 .amount-out { color: var(--danger); font-weight: bold; }
 .amount-in { color: var(--mpesa-green); font-weight: bold; }
 
+/* REVEAL BALANCE BUTTON */
+#toggle-privacy {
+    font-family: 'JetBrains Mono', monospace;
+    border-radius: 999px;
+    border: 1px solid var(--neon-green);
+    color: var(--neon-green);
+    background: rgba(0, 255, 65, 0.05);
+    box-shadow: 0 0 10px rgba(0, 255, 65, 0.15), inset 0 0 8px rgba(0, 255, 65, 0.05);
+    transition: box-shadow 0.3s ease;
+}
+
+#toggle-privacy:hover {
+    box-shadow: 0 0 18px rgba(0, 255, 65, 0.35), inset 0 0 12px rgba(0, 255, 65, 0.1);
+}
+
 /* ============================================
    COLLAPSIBLE LEDGER SYSTEM
    ============================================ */
@@ -52,7 +73,6 @@ textarea {
     gap: 0;
 }
 
-/* The two toggle buttons sit side-by-side */
 .ledger-controls {
     display: flex;
     gap: 8px;
@@ -84,7 +104,6 @@ textarea {
     color: #fff;
 }
 
-/* Active state — lit up when panel is open */
 .ledger-toggle-btn.ledger-active {
     background: rgba(0, 255, 65, 0.06);
     border-color: var(--neon-green);
@@ -109,7 +128,6 @@ textarea {
     font-size: 0.55rem;
 }
 
-/* The expanding panel */
 .ledger-panel {
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid var(--border);
@@ -134,27 +152,16 @@ textarea {
     border-bottom: 1px solid var(--border);
 }
 
-/* The actual list inside — scrollable if it gets tall */
 .ledger-panel .mini-ledger {
     max-height: 260px;
     overflow-y: auto;
     padding: 8px;
 }
 
-/* Scrollbar styling to match theme */
-.ledger-panel .mini-ledger::-webkit-scrollbar {
-    width: 4px;
-}
-.ledger-panel .mini-ledger::-webkit-scrollbar-track {
-    background: transparent;
-}
-.ledger-panel .mini-ledger::-webkit-scrollbar-thumb {
-    background: var(--border);
-    border-radius: 2px;
-}
-.ledger-panel .mini-ledger::-webkit-scrollbar-thumb:hover {
-    background: var(--neon-green);
-}
+.ledger-panel .mini-ledger::-webkit-scrollbar { width: 4px; }
+.ledger-panel .mini-ledger::-webkit-scrollbar-track { background: transparent; }
+.ledger-panel .mini-ledger::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.ledger-panel .mini-ledger::-webkit-scrollbar-thumb:hover { background: var(--neon-green); }
 /* ============================================ */
 
 /* THE NEW BEAUTIFUL BLEND */
@@ -206,38 +213,6 @@ textarea {
     font-weight: 500;
 }
 
-/* --- APEX // FLUX REVEAL TRIGGER STYLING --- */
-#reveal-btn, .balance-toggle {
-    background: rgba(0, 255, 65, 0.05); /* Very subtle transparent green */
-    color: #00ff41;                    /* M-Pesa/Matrix Green */
-    border: 1px solid rgba(0, 255, 65, 0.3);
-    border-radius: 20px;               /* Pill shape for modern look */
-    padding: 6px 15px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.75rem;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 0 10px rgba(0, 255, 65, 0.1);
-    backdrop-filter: blur(5px);        /* Premium glass effect */
-    margin-top: 10px;
-}
-
-#reveal-btn:hover {
-    background: rgba(0, 255, 65, 0.15);
-    box-shadow: 0 0 15px rgba(0, 255, 65, 0.4);
-    border-color: #00ff41;
-}
-
-/* Make the balance text look "Encrypted" before reveal */
-.balance-hidden {
-    filter: blur(8px);
-    opacity: 0.5;
-    transition: filter 0.5s ease;
-}
-
-/* Numpad Glass Style */
 .numpad button {
     padding: 15px;
     background: rgba(255, 255, 255, 0.05);
@@ -342,12 +317,10 @@ textarea {
         margin: 0 auto;
     }
 
-    /* On mobile, expand the scrollable panel height slightly */
     .ledger-panel .mini-ledger {
         max-height: 300px;
     }
 
-    /* Keep the ledger toggle buttons side by side on mobile */
     .ledger-controls {
         display: flex;
         flex-direction: row;
