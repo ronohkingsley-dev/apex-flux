@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initChart();
 });
 
-// --- 1. THE EFFICIENCY ENGINE (NEW) ---
+// --- 1. THE EFFICIENCY ENGINE ---
 function runEfficiencyDiagnostic() {
     const now = new Date();
     const startDate = new Date(STATE.weekStartDate);
@@ -29,7 +29,7 @@ function runEfficiencyDiagnostic() {
         .reduce((s, i) => s + i.cost, 0);
 
     if (todaySpend > 200) {
-        STATE.xp = Math.max(0, STATE.xp - 2); 
+        STATE.xp = Math.max(0, STATE.xp - 2);
     }
 
     // Weekly Cycle Check (Every 7 Days)
@@ -53,19 +53,19 @@ function runEfficiencyDiagnostic() {
     }
 }
 
-// --- 2. THE DELETE/ROLLBACK LOGIC (INTEGRATED) ---
+// --- 2. THE DELETE/ROLLBACK LOGIC ---
 function deleteEntry(index) {
     const item = STATE.outbound[index];
-    
+
     // Restoration: Refund money to balance
     STATE.balance += item.cost;
-    
+
     // Remove from array
     STATE.outbound.splice(index, 1);
-    
+
     // Correction Penalty
     STATE.xp = Math.max(0, STATE.xp - 5);
-    
+
     syncUI();
     console.log(`[ROLLBACK] ${item.name} removed. KES ${item.cost} restored.`);
 }
@@ -169,7 +169,20 @@ function renderLists() {
     `).join('');
 }
 
-// --- 6. UTILITY FUNCTIONS ---
+// --- 6. COLLAPSIBLE LEDGER TOGGLE ---
+function toggleLedger(type) {
+    const panel = document.getElementById('panel-' + type);
+    const btn = document.getElementById('btn-' + type);
+    const isVisible = panel.style.display === 'block';
+
+    // Toggle the panel visibility
+    panel.style.display = isVisible ? 'none' : 'block';
+
+    // Toggle the active class on the button
+    btn.classList.toggle('ledger-active', !isVisible);
+}
+
+// --- 7. UTILITY FUNCTIONS ---
 function getEngTier(xp) {
     if (xp < 200) return "CAD INTERN";
     if (xp < 500) return "JUNIOR TECHNICIAN";
@@ -216,7 +229,7 @@ function exportBlueprint() {
     const a = document.createElement('a'); a.href = url; a.download = `Flux_Blueprint.txt`; a.click();
 }
 
-// --- 7. AUTH & NAVIGATION (KEEP AS IS) ---
+// --- 8. AUTH & NAVIGATION (KEEP AS IS) ---
 let enteredPin = "";
 function inputPin(n) { if (enteredPin.length < 4) { enteredPin += n; document.getElementById('pin-input').value = "*".repeat(enteredPin.length); } }
 function clearPin() { enteredPin = ""; document.getElementById('pin-input').value = ""; }
