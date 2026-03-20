@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>APEX // FLUX V4.2 (BLUEPRINT EDITION)</title>
+    <title>APEX // FLUX V4.5</title>
     <link rel="icon" type="image/png" href="flux-icon.png?v=99">
     <link rel="apple-touch-icon" href="flux-icon.png?v=99">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
@@ -13,30 +13,30 @@
 <body class="apex-theme">
 
     <div id="guardian-overlay" class="overlay">
-    <div class="auth-card">
-        <div class="auth-header">
-            <h1 class="brand-auth">APEX <span class="flux-span">FLUX</span></h1>
-            <p class="sentry-tag">GUARDIAN SENTRY // SYSTEM ACCESS</p>
-        </div>
-        <div class="pin-box">
-            <input type="password" id="pin-input" placeholder="****" readonly>
-        </div>
-        <div class="numpad">
-            <button onclick="inputPin(1)">1</button>
-            <button onclick="inputPin(2)">2</button>
-            <button onclick="inputPin(3)">3</button>
-            <button onclick="inputPin(4)">4</button>
-            <button onclick="inputPin(5)">5</button>
-            <button onclick="inputPin(6)">6</button>
-            <button onclick="inputPin(7)">7</button>
-            <button onclick="inputPin(8)">8</button>
-            <button onclick="inputPin(9)">9</button>
-            <button onclick="clearPin()" class="btn-alt">C</button>
-            <button onclick="inputPin(0)">0</button>
-            <button onclick="verifyPin()" class="btn-primary">➔</button>
+        <div class="auth-card">
+            <div class="auth-header">
+                <h1 class="brand-auth">APEX <span class="flux-span">FLUX</span></h1>
+                <p class="sentry-tag">GUARDIAN SENTRY // SYSTEM ACCESS</p>
+            </div>
+            <div class="pin-box">
+                <input type="password" id="pin-input" placeholder="****" readonly>
+            </div>
+            <div class="numpad">
+                <button onclick="inputPin(1)">1</button>
+                <button onclick="inputPin(2)">2</button>
+                <button onclick="inputPin(3)">3</button>
+                <button onclick="inputPin(4)">4</button>
+                <button onclick="inputPin(5)">5</button>
+                <button onclick="inputPin(6)">6</button>
+                <button onclick="inputPin(7)">7</button>
+                <button onclick="inputPin(8)">8</button>
+                <button onclick="inputPin(9)">9</button>
+                <button onclick="clearPin()" class="btn-alt">C</button>
+                <button onclick="inputPin(0)">0</button>
+                <button onclick="verifyPin()" class="btn-primary">➔</button>
+            </div>
         </div>
     </div>
-</div>
 
     <div id="secure-modal" class="modal-overlay" style="display:none;">
         <div class="auth-card">
@@ -78,7 +78,7 @@
                     <div class="stat-row">BURN: <span id="burn-rate">0.00</span>/hr</div>
                     <div class="stat-row">ETA: <span id="days-left" class="neon-text">--</span> DAYS</div>
                 </section>
-                
+
                 <section class="card report-card">
                     <header>WEEKLY DIAGNOSTIC</header>
                     <div id="weekly-report-content">
@@ -101,14 +101,27 @@
                         <div class="scanner-line"></div>
                     </div>
                     <button class="action-btn" onclick="shredSMS()">INITIALIZE SYNC</button>
-                    
-                    <div class="history-split">
-                        <div class="history-col">
-                            <header>INBOUND (RECEIPTS)</header>
+
+                    <!-- COLLAPSIBLE LEDGER SYSTEM -->
+                    <div class="collapsible-ledger">
+                        <div class="ledger-controls">
+                            <button id="btn-inbound" class="ledger-toggle-btn" onclick="toggleLedger('inbound')">
+                                <span class="ledger-btn-icon">▶</span>
+                                <span>INBOUND <span class="ledger-sub">(RECEIPTS)</span></span>
+                            </button>
+                            <button id="btn-outbound" class="ledger-toggle-btn" onclick="toggleLedger('outbound')">
+                                <span class="ledger-btn-icon">▶</span>
+                                <span>OUTBOUND <span class="ledger-sub">(TRADES)</span></span>
+                            </button>
+                        </div>
+
+                        <div id="panel-inbound" class="ledger-panel" style="display:none;">
+                            <div class="ledger-panel-header">INBOUND (RECEIPTS)</div>
                             <div id="inbound-list" class="mini-ledger"></div>
                         </div>
-                        <div class="history-col">
-                            <header>OUTBOUND (TRADES)</header>
+
+                        <div id="panel-outbound" class="ledger-panel" style="display:none;">
+                            <div class="ledger-panel-header">OUTBOUND (TRADES)</div>
                             <div id="outbound-list" class="mini-ledger"></div>
                         </div>
                     </div>
