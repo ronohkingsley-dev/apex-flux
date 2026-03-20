@@ -194,3 +194,38 @@ textarea {
         margin: 0 auto;
     }
 }
+/* This ensures the login page is always dead-center on any phone */
+#login-screen, .sentry-overlay {
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* Vertical center */
+    align-items: center;     /* Horizontal center */
+    min-height: 100vh;       /* Fill the whole screen height */
+    width: 100%;
+    padding: 20px;
+    box-sizing: border-box;  /* Prevents padding from breaking width */
+}
+
+/* Ensure your PIN pad or login box doesn't get too wide */
+.pin-container, .login-box {
+    width: 100%;
+    max-width: 320px;        /* Fits perfectly in a 360px screen */
+    margin: 0 auto;
+}
+@media (max-width: 400px) {
+    /* Scale down large headings that might be pushing content off-screen */
+    h1 { font-size: 1.5rem; }
+    h2 { font-size: 1.2rem; }
+
+    /* Ensure the Liquidity Gauge doesn't overflow */
+    canvas, .gauge-visual {
+        max-width: 100% !important;
+        height: auto !important;
+    }
+
+    /* Stack your stats so they don't try to sit side-by-side */
+    .stats-row {
+        display: flex;
+        flex-direction: column;
+    }
+}
