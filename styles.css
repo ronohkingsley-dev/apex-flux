@@ -246,29 +246,55 @@ textarea {
     left: 0 !important;
     top: 0 !important;
 }
-/* --- APEX // FLUX VERTICAL STACK FIX --- */
+
+/* --- APEX // FLUX MOBILE STACK (Tailored for v4.5) --- */
 @media (max-width: 850px) {
-    /* 1. Find the main container holding your dashboard and force it to stack */
-    .dashboard, .main-content, .grid-container, .wrapper {
+    /* 1. Force the grid to become a single column stack */
+    .grid-container {
         display: flex !important;
-        flex-direction: column !important; /* Forces side-by-side to go top-to-bottom */
-        gap: 20px;
-        padding: 15px;
+        flex-direction: column !important;
+        width: 100% !important;
+        padding: 10px !important;
+        gap: 20px !important;
     }
 
-    /* 2. Target the specific sections (Shredder, Vault, Vortex, Trades, etc.) */
-    .shredder-section, .vault-panel, .vortex-module, 
-    .inbound-receipts, .outbound-trades, .column, .side-panel {
-        width: 100% !important;   /* Take up the full width of the phone */
+    /* 2. Ensure both columns take full width and don't float */
+    .vitals-col, .modules-col {
+        width: 100% !important;
         max-width: 100% !important;
-        margin: 0 0 20px 0 !important;
-        position: static !important; /* Prevents them from floating off-screen */
+        flex: none !important;
         display: block !important;
     }
 
-    /* 3. Fix the "Receipts & Trades" side-by-side issue */
-    .row, .flex-row {
+    /* 3. Fix the "Inbound/Outbound" side-by-side split */
+    .history-split {
+        display: flex !important;
         flex-direction: column !important;
+        width: 100% !important;
+    }
+
+    .history-col {
+        width: 100% !important;
+        margin-bottom: 15px;
+    }
+
+    /* 4. Ensure the navigation buttons don't shrink */
+    .module-nav {
+        display: flex;
+        flex-wrap: wrap; /* Allows buttons to wrap to a second line if needed */
+        justify-content: space-around;
+        margin-bottom: 20px;
+    }
+
+    .nav-btn {
+        flex: 1;
+        min-width: 80px;
+        font-size: 0.8rem;
+    }
+    
+    /* 5. Force the body to allow vertical scrolling */
+    body {
+        overflow-y: auto !important;
+        height: auto !important;
     }
 }
-
