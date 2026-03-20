@@ -1,4 +1,4 @@
-const STATE = {
+/*const STATE = {
     balance: parseFloat(localStorage.getItem('flux_bal')) || 0,
     outbound: JSON.parse(localStorage.getItem('flux_out')) || [],
     inbound: JSON.parse(localStorage.getItem('flux_in')) || [],
@@ -240,3 +240,4 @@ function confirmSecureToggle() { const p = document.getElementById('modal-pin').
 function initChart() { const ctx = document.getElementById('fluxChart').getContext('2d'); fluxChart = new Chart(ctx, { type: 'line', data: { labels: [], datasets: [{ borderColor: '#00ff41', data: [], tension: 0.3 }] }, options: { plugins: { legend: { display: false } }, scales: { y: { grid: { color: '#111' } } } } }); }
 function updateChart() { if (!fluxChart) return; fluxChart.data.labels = STATE.outbound.slice(-7).map(i => i.name); fluxChart.data.datasets[0].data = STATE.outbound.slice(-7).map(i => i.cost); fluxChart.update(); }
 function showModule(id) { document.querySelectorAll('.module-content').forEach(m => m.style.display='none'); document.getElementById('mod-'+id).style.display='block'; document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active')); event.currentTarget.classList.add('active'); }
+*/
