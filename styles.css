@@ -148,25 +148,49 @@ textarea {
     color: white;
     border-color: var(--danger);
 }
-/* Simple Mobile Optimization */
-@media (max-width: 600px) {
-  .dashboard-container {
-    display: flex;
-    flex-direction: column;
-    padding: 10px;
-  }
-  
-  .gauge-container {
-    width: 100%;
-    margin-bottom: 20px;
-  }
+/* --- APEX // FLUX MOBILE OVERRIDE --- */
+@media (max-width: 768px) {
+    /* 1. Reset the layout to a single column */
+    body {
+        padding: 10px;
+        overflow-x: hidden; /* Prevents annoying side-scrolling */
+    }
 
-  button {
-    height: 50px; /* Larger tap targets for fingers */
-    font-size: 1.1rem;
-  }
+    /* 2. Stack the Dashboard Cards */
+    .dashboard, .main-container, .grid-layout { 
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 15px;
+    }
 
-  .sms-input-area {
-    font-size: 16px; /* Prevents iOS from zooming in on focus */
-  }
+    /* 3. Make the Gauges/Cards full width */
+    .card, .gauge-box, .stat-panel {
+        width: 100% !important;
+        margin: 0 0 10px 0;
+        box-sizing: border-box;
+    }
+
+    /* 4. The "Thumb-Friendly" Buttons */
+    button, .action-btn {
+        width: 100%;
+        min-height: 55px; /* Bigger for thumbs */
+        font-size: 1.1rem;
+        margin-bottom: 10px;
+    }
+
+    /* 5. SMS Input Area (The Shredder) */
+    textarea, #sms-input {
+        width: 100%;
+        font-size: 16px; /* Essential: Prevents iPhones from "auto-zooming" */
+        border-radius: 12px;
+    }
+
+    /* 6. The "Sentry" PIN Pad */
+    .pin-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        max-width: 300px;
+        margin: 0 auto;
+    }
 }
