@@ -206,6 +206,37 @@ textarea {
     font-weight: 500;
 }
 
+/* --- APEX // FLUX REVEAL TRIGGER STYLING --- */
+#reveal-btn, .balance-toggle {
+    background: rgba(0, 255, 65, 0.05); /* Very subtle transparent green */
+    color: #00ff41;                    /* M-Pesa/Matrix Green */
+    border: 1px solid rgba(0, 255, 65, 0.3);
+    border-radius: 20px;               /* Pill shape for modern look */
+    padding: 6px 15px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 10px rgba(0, 255, 65, 0.1);
+    backdrop-filter: blur(5px);        /* Premium glass effect */
+    margin-top: 10px;
+}
+
+#reveal-btn:hover {
+    background: rgba(0, 255, 65, 0.15);
+    box-shadow: 0 0 15px rgba(0, 255, 65, 0.4);
+    border-color: #00ff41;
+}
+
+/* Make the balance text look "Encrypted" before reveal */
+.balance-hidden {
+    filter: blur(8px);
+    opacity: 0.5;
+    transition: filter 0.5s ease;
+}
+
 /* Numpad Glass Style */
 .numpad button {
     padding: 15px;
