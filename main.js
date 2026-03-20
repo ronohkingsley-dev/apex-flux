@@ -80,12 +80,15 @@ function syncUI() {
     localStorage.setItem('flux_xp', STATE.xp);
 
     const balEl = document.getElementById('bal-amount');
+    const privBtn = document.getElementById('toggle-privacy');
     if (STATE.isPrivate) {
         balEl.classList.add('blurred');
         balEl.innerText = "****.**";
+        privBtn.innerText = "REVEAL DATA";
     } else {
         balEl.classList.remove('blurred');
         balEl.innerText = STATE.balance.toLocaleString(undefined, {minimumFractionDigits: 2});
+        privBtn.innerText = "HIDE DATA";
     }
 
     document.getElementById('xp-display').innerText = STATE.xp;
@@ -175,10 +178,7 @@ function toggleLedger(type) {
     const btn = document.getElementById('btn-' + type);
     const isVisible = panel.style.display === 'block';
 
-    // Toggle the panel visibility
     panel.style.display = isVisible ? 'none' : 'block';
-
-    // Toggle the active class on the button
     btn.classList.toggle('ledger-active', !isVisible);
 }
 
@@ -229,7 +229,7 @@ function exportBlueprint() {
     const a = document.createElement('a'); a.href = url; a.download = `Flux_Blueprint.txt`; a.click();
 }
 
-// --- 8. AUTH & NAVIGATION (KEEP AS IS) ---
+// --- 8. AUTH & NAVIGATION ---
 let enteredPin = "";
 function inputPin(n) { if (enteredPin.length < 4) { enteredPin += n; document.getElementById('pin-input').value = "*".repeat(enteredPin.length); } }
 function clearPin() { enteredPin = ""; document.getElementById('pin-input').value = ""; }
