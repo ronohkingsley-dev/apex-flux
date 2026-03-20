@@ -27,8 +27,8 @@ body { background: var(--bg-deep); color: #fff; font-family: 'Rajdhani', sans-se
 
 /* TEXTAREA & SCANNER */
 .textarea-wrapper { position: relative; margin-bottom: 15px; }
-textarea { 
-    width: 100%; height: 80px; background: #000; border: 1px solid var(--border); 
+textarea {
+    width: 100%; height: 80px; background: #000; border: 1px solid var(--border);
     color: var(--neon-green); padding: 12px; font-family: monospace; resize: none;
 }
 .scanner-line {
@@ -38,18 +38,130 @@ textarea {
 @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
 
 /* REST OF SYSTEM UI */
-.history-split { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .log-entry { background: rgba(255,255,255,0.02); margin-bottom: 4px; padding: 8px; border-left: 2px solid var(--border); display: flex; justify-content: space-between; font-size: 0.8rem;}
 .amount-out { color: var(--danger); font-weight: bold; }
 .amount-in { color: var(--mpesa-green); font-weight: bold; }
 
-/* THE NEW BEAUTIFUL BLEND */
+/* ============================================
+   COLLAPSIBLE LEDGER SYSTEM
+   ============================================ */
+.collapsible-ledger {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+/* The two toggle buttons sit side-by-side */
+.ledger-controls {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.ledger-toggle-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: rgba(0, 255, 65, 0.03);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    cursor: pointer;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.58rem;
+    letter-spacing: 1px;
+    border-radius: 3px;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.ledger-toggle-btn:hover {
+    background: rgba(0, 255, 65, 0.07);
+    border-color: rgba(0, 255, 65, 0.4);
+    color: #fff;
+}
+
+/* Active state — lit up when panel is open */
+.ledger-toggle-btn.ledger-active {
+    background: rgba(0, 255, 65, 0.06);
+    border-color: var(--neon-green);
+    color: var(--neon-green);
+}
+
+.ledger-toggle-btn.ledger-active .ledger-btn-icon {
+    transform: rotate(90deg);
+    color: var(--neon-green);
+}
+
+.ledger-btn-icon {
+    font-size: 0.5rem;
+    transition: transform 0.25s ease;
+    color: var(--text-dim);
+    flex-shrink: 0;
+}
+
+.ledger-sub {
+    color: inherit;
+    opacity: 0.6;
+    font-size: 0.55rem;
+}
+
+/* The expanding panel */
+.ledger-panel {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border);
+    border-top: 2px solid var(--neon-green);
+    border-radius: 0 0 3px 3px;
+    margin-bottom: 8px;
+    overflow: hidden;
+    animation: ledgerReveal 0.2s ease forwards;
+}
+
+@keyframes ledgerReveal {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.ledger-panel-header {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.55rem;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    padding: 8px 12px 6px;
+    border-bottom: 1px solid var(--border);
+}
+
+/* The actual list inside — scrollable if it gets tall */
+.ledger-panel .mini-ledger {
+    max-height: 260px;
+    overflow-y: auto;
+    padding: 8px;
+}
+
+/* Scrollbar styling to match theme */
+.ledger-panel .mini-ledger::-webkit-scrollbar {
+    width: 4px;
+}
+.ledger-panel .mini-ledger::-webkit-scrollbar-track {
+    background: transparent;
+}
+.ledger-panel .mini-ledger::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 2px;
+}
+.ledger-panel .mini-ledger::-webkit-scrollbar-thumb:hover {
+    background: var(--neon-green);
+}
+/* ============================================ */
+
 /* THE NEW BEAUTIFUL BLEND */
 .overlay {
     position: fixed;
     top: 0; left: 0;
     width: 100%; height: 100%;
-    /* Gradient: Deep Space Blue to Slate Gray */
     background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #020617 100%);
     z-index: 3000;
     display: flex;
@@ -58,11 +170,9 @@ textarea {
 }
 
 .auth-card {
-    /* Frosted Glass Effect */
     background: rgba(255, 255, 255, 0.03);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    
     padding: 40px;
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;
@@ -71,7 +181,6 @@ textarea {
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 }
 
-/* Updated Brand Text for the Blend */
 .brand-auth {
     font-family: 'Orbitron', sans-serif;
     font-size: 2rem;
@@ -91,7 +200,7 @@ textarea {
 .sentry-tag {
     font-family: 'Rajdhani', sans-serif;
     font-size: 0.75rem;
-    color: #94a3b8; /* Soft blue-gray */
+    color: #94a3b8;
     letter-spacing: 3px;
     margin-top: 10px;
     font-weight: 500;
@@ -114,6 +223,7 @@ textarea {
     border-color: var(--neon-green);
     transform: translateY(-2px);
 }
+
 .pin-box input { width: 100%; background: #111; border: 1px solid var(--neon-green); color: var(--neon-green); text-align: center; font-size: 1.8rem; padding: 10px; margin-bottom: 10px; }
 .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
 .numpad button { padding: 12px; background: transparent; border: 1px solid #222; color: #fff; cursor: pointer; }
@@ -126,6 +236,7 @@ textarea {
 .gauge-path { fill: none; stroke-width: 8; stroke-dasharray: 126; stroke-dashoffset: 126; transition: 1.5s ease; }
 @keyframes pulse { 0%, 100% { border-color: var(--danger); } 50% { border-color: transparent; } }
 .emergency-active { animation: pulse 1s infinite; }
+
 .log-actions {
     display: flex;
     align-items: center;
@@ -148,55 +259,50 @@ textarea {
     color: white;
     border-color: var(--danger);
 }
+
 /* --- APEX // FLUX MOBILE OVERRIDE --- */
 @media (max-width: 768px) {
-    /* 1. Reset the layout to a single column */
     body {
         padding: 10px;
-        overflow-x: hidden; /* Prevents annoying side-scrolling */
+        overflow-x: hidden;
         overflow-y: auto !important;
         height: auto !important;
     }
-    .container, .main-wrapper, .dashboard-grid{
+    .container, .main-wrapper, .dashboard-grid {
         display: block !important;
         width: 100% !important;
         padding: 10px !important;
     }
-    *{
-        max-width:100vw !important;
+    * {
+        max-width: 100vw !important;
         box-sizing: border-box;
     }
 
-    /* 2. Stack the Dashboard Cards */
-    .dashboard, .main-container, .grid-layout { 
+    .dashboard, .main-container, .grid-layout {
         display: flex !important;
         flex-direction: column !important;
         gap: 15px;
     }
 
-    /* 3. Make the Gauges/Cards full width */
     .card, .gauge-box, .stat-panel {
         width: 100% !important;
         margin: 0 0 10px 0;
         box-sizing: border-box;
     }
 
-    /* 4. The "Thumb-Friendly" Buttons */
     button, .action-btn {
         width: 100%;
-        min-height: 55px; /* Bigger for thumbs */
+        min-height: 55px;
         font-size: 1.1rem;
         margin-bottom: 10px;
     }
 
-    /* 5. SMS Input Area (The Shredder) */
     textarea, #sms-input {
         width: 100%;
-        font-size: 16px; /* Essential: Prevents iPhones from "auto-zooming" */
+        font-size: 16px;
         border-radius: 12px;
     }
 
-    /* 6. The "Sentry" PIN Pad */
     .pin-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -204,42 +310,57 @@ textarea {
         max-width: 300px;
         margin: 0 auto;
     }
+
+    /* On mobile, expand the scrollable panel height slightly */
+    .ledger-panel .mini-ledger {
+        max-height: 300px;
+    }
+
+    /* Keep the ledger toggle buttons side by side on mobile */
+    .ledger-controls {
+        display: flex;
+        flex-direction: row;
+        gap: 8px;
+    }
+
+    .ledger-toggle-btn {
+        min-height: 44px;
+        font-size: 0.55rem;
+    }
 }
-/* This ensures the login page is always dead-center on any phone */
+
 #login-screen, .sentry-overlay {
     display: flex;
     flex-direction: column;
-    justify-content: center; /* Vertical center */
-    align-items: center;     /* Horizontal center */
-    min-height: 100vh;       /* Fill the whole screen height */
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
     width: 100%;
     padding: 20px;
-    box-sizing: border-box;  /* Prevents padding from breaking width */
+    box-sizing: border-box;
 }
 
-/* Ensure your PIN pad or login box doesn't get too wide */
 .pin-container, .login-box {
     width: 100%;
-    max-width: 320px;        /* Fits perfectly in a 360px screen */
+    max-width: 320px;
     margin: 0 auto;
 }
+
 @media (max-width: 400px) {
-    /* Scale down large headings that might be pushing content off-screen */
     h1 { font-size: 1.5rem; }
     h2 { font-size: 1.2rem; }
 
-    /* Ensure the Liquidity Gauge doesn't overflow */
     canvas, .gauge-visual {
         max-width: 100% !important;
         height: auto !important;
     }
 
-    /* Stack your stats so they don't try to sit side-by-side */
     .stats-row {
         display: flex;
         flex-direction: column;
     }
 }
+
 .sidebar, .right-panel, .liquidity-stats {
     width: 100% !important;
     position: relative !important;
@@ -249,7 +370,6 @@ textarea {
 
 /* --- APEX // FLUX MOBILE STACK (Tailored for v4.5) --- */
 @media (max-width: 850px) {
-    /* 1. Force the grid to become a single column stack */
     .grid-container {
         display: flex !important;
         flex-direction: column !important;
@@ -258,7 +378,6 @@ textarea {
         gap: 20px !important;
     }
 
-    /* 2. Ensure both columns take full width and don't float */
     .vitals-col, .modules-col {
         width: 100% !important;
         max-width: 100% !important;
@@ -266,7 +385,6 @@ textarea {
         display: block !important;
     }
 
-    /* 3. Fix the "Inbound/Outbound" side-by-side split */
     .history-split {
         display: flex !important;
         flex-direction: column !important;
@@ -278,10 +396,9 @@ textarea {
         margin-bottom: 15px;
     }
 
-    /* 4. Ensure the navigation buttons don't shrink */
     .module-nav {
         display: flex;
-        flex-wrap: wrap; /* Allows buttons to wrap to a second line if needed */
+        flex-wrap: wrap;
         justify-content: space-around;
         margin-bottom: 20px;
     }
@@ -291,8 +408,7 @@ textarea {
         min-width: 80px;
         font-size: 0.8rem;
     }
-    
-    /* 5. Force the body to allow vertical scrolling */
+
     body {
         overflow-y: auto !important;
         height: auto !important;
