@@ -205,6 +205,11 @@ function getEngTier(xp) {
     return "INDUSTRIAL MAGNATE";
 }
 
+// ============================================================
+// v6.0 APEX // FLUX — MASTER COMMAND CENTER
+// ============================================================
+
+// 1. MANUAL ENTRY LOGIC (From your latest screenshot)
 function addManualEntry() {
     const costInput = document.getElementById('manual-cost');
     const recipientInput = document.getElementById('manual-recipient');
@@ -215,317 +220,146 @@ function addManualEntry() {
     const category = categoryInput.value;
 
     if (!isNaN(cost) && cost > 0) {
-        // --- THE ACTIVE AUDITOR UPGRADE ---
-        // This popup gathers the "Context" the Advisor needs to give real advice.
-        const commodity = prompt(`TACTICAL_INPUT: What was this KES ${cost.toLocaleString()} for? (e.g., Supper, Data, Fare, Printing)`, "General");
+        // Gathering the "Commodity" for the Advisor to read
+        const commodity = prompt(`TACTICAL_INPUT: What was this KES ${cost.toLocaleString()} for? (e.g., Supper, Data, Fare)`, "General");
 
         const entry = {
             id: Date.now(),
             cost: cost,
             recipient: recipient,
             category: category,
-            commodity: (commodity || "Uncategorized").trim(), // The "Brain" of the AI
+            commodity: (commodity || "General").trim(),
             timestamp: Date.now()
         };
 
-        // Update State
         STATE.outbound.push(entry);
         STATE.balance -= cost;
         
-        // Bonus XP for providing tactical detail
-        if (commodity && commodity.toLowerCase() !== "general") {
-            STATE.xp += 5; 
-            console.log("XP_BOOST: Contextual data logged.");
-        }
+        // XP Bonus for detail
+        if (commodity && commodity.toLowerCase() !== "general") STATE.xp += 5; 
 
-        // Save to LocalStorage
         localStorage.setItem('flux_out', JSON.stringify(STATE.outbound));
         localStorage.setItem('flux_bal', STATE.balance);
 
-        // Update UI
         syncUI();
         updateBudgetProgress();
         
-        // Reset Inputs
         costInput.value = "";
         recipientInput.value = "";
-        
-        console.log(`LOG_SUCCESS: ${entry.commodity} logged to Outbound History.`);
+        console.log(`LOG_SUCCESS: ${entry.commodity} recorded.`);
     } else {
         alert("CRITICAL_ERROR: Invalid cost parameters.");
     }
 }
-function generateWeeklyReport() {
-    const now = Date.now();
-    const oneWeekAgo = now - (7 * 24 * 60 * 60 * 1000);
-    const weeklySpend = STATE.outbound.filter(item => item.timestamp > oneWeekAgo);
-    const total = weeklySpend.reduce((acc, curr) => acc + curr.cost, 0);
-    const container = document.getElementById('weekly-report-content');
-    if (total === 0) { container.innerHTML = `<p class="dim-text">No weekly data.</p>`; return; }
-    const categories = ["Food", "Transport", "Academic", "Utility", "Transfer"];
-    let html = `<p class="neon-text" style="font-size:0.9rem; margin-bottom:10px;">TOTAL: KES ${total.toLocaleString()}</p>`;
-    categories.forEach(cat => {
-        const catTotal = weeklySpend.filter(i => i.cat === cat || (cat === "Utility" && i.cat === "Utilities")).reduce((s, i) => s + i.cost, 0);
-        const percent = ((catTotal / total) * 100).toFixed(0);
-        if (catTotal > 0) { html += `<div class="report-item"><span>${cat}</span><span>${percent}%</span></div><div class="report-bar-wrap"><div class="report-bar-fill" style="width:${percent}%"></div></div>`; }
-    });
-    container.innerHTML = html;
-}
 
-function exportBlueprint() {
-    let report = `APEX // FLUX - ENGINEERING LOG\nGenerated: ${new Date().toLocaleString()}\nTier: ${getEngTier(STATE.xp)}\nAssets: KES ${STATE.balance.toLocaleString()}\n-------------------------------------------\n\n[OUTBOUND]\n`;
-    STATE.outbound.forEach(i => { report += `${new Date(i.timestamp).toLocaleDateString()} | ${i.name.padEnd(20)} | KES ${i.cost.toLocaleString().padStart(8)} | (${i.cat})\n`; });
-    const blob = new Blob([report], { type: 'text/plain' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = `Flux_Blueprint.txt`; a.click();
-}
-
-// --- 8. AUTH & NAVIGATION ---
-let enteredPin = "";
-function inputPin(n) { if (enteredPin.length < 4) { enteredPin += n; document.getElementById('pin-input').value = "*".repeat(enteredPin.length); } }
-function clearPin() { enteredPin = ""; document.getElementById('pin-input').value = ""; }
+// 2. PIN VERIFICATION & VORTEX RESET
 function verifyPin() {
+    const pinInput = document.getElementById('pin-input');
+    const enteredPin = pinInput.value;
+
     if (enteredPin === STATE.pin) {
+        // --- VORTEX RESET LOGIC ---
+        const now = new Date();
+        const weekStart = new Date(STATE.weekStartDate);
+        const daysElapsed = (now - weekStart) / (1000 * 60 * 60 * 24);
+
+        if (daysElapsed >= 7) {
+            STATE.lastWeekSpend = STATE.outbound
+                .filter(i => i.timestamp > weekStart.getTime())
+                .reduce((s, i) => s + i.cost, 0);
+            STATE.weekStartDate = now.toISOString();
+            localStorage.setItem('flux_last_spend', STATE.lastWeekSpend);
+            localStorage.setItem('flux_week_start', STATE.weekStartDate);
+        }
+
+        // --- UI TRANSITION ---
         document.getElementById('guardian-overlay').style.display = 'none';
         document.querySelector('.dashboard-wrapper').style.display = 'flex';
-        syncUI();
-        updateBudgetProgress();
+        
+        syncUI(); 
+        updateBudgetProgress(); 
+        runEfficiencyDiagnostic(); 
 
-    document.getElementById('advisor-trigger').style.display = 'block';
+        const advBtn = document.getElementById('advisor-trigger');
+        if(advBtn) advBtn.style.display = 'block';
     } else {
-        alert("DENIED");
+        alert("ACCESS_DENIED: Invalid Sentry PIN.");
         clearPin();
     }
 }
-function openSecureModal() { if (!STATE.isPrivate) { STATE.isPrivate = true; syncUI(); return; } document.getElementById('secure-modal').style.display = 'flex'; }
-function closeSecureModal() { document.getElementById('secure-modal').style.display = 'none'; }
-function confirmSecureToggle() { const p = document.getElementById('modal-pin').value; if (p === STATE.pin) { STATE.isPrivate = false; closeSecureModal(); document.getElementById('modal-pin').value = ""; syncUI(); } else { alert("INVALID"); } }
-function initChart() { const ctx = document.getElementById('fluxChart').getContext('2d'); fluxChart = new Chart(ctx, { type: 'line', data: { labels: [], datasets: [{ borderColor: '#00ff41', data: [], tension: 0.3 }] }, options: { plugins: { legend: { display: false } }, scales: { y: { grid: { color: '#111' } } } } }); }
-function updateChart() { if (!fluxChart) return; fluxChart.data.labels = STATE.outbound.slice(-7).map(i => i.name); fluxChart.data.datasets[0].data = STATE.outbound.slice(-7).map(i => i.cost); fluxChart.update(); }
-function showModule(id) {
-    document.querySelectorAll('.module-content').forEach(m => m.style.display='none');
-    document.getElementById('mod-'+id).style.display='block';
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    try { event.currentTarget.classList.add('active'); } catch(e) {}
-}
 
-// --- 9. DASHBOARD NAVIGATION ---
-function launchModule(id) {
-    document.getElementById('dashboard-view').style.display = 'none';
-    document.getElementById('modules-view').style.display = 'flex';
-    showModule(id);
-}
-
-function goToDashboard() {
-    document.getElementById('modules-view').style.display = 'none';
-    document.getElementById('dashboard-view').style.display = 'block';
-    updateBudgetProgress();
-}
-
-// --- 10. BUDGET CONTROL FUNCTION ---
-function setWeeklyTarget() {
-    const val = parseFloat(document.getElementById('weekly-target-input').value);
-    if (!isNaN(val) && val > 0) {
-        STATE.weeklyTarget = val;
-        localStorage.setItem('flux_weekly_target', val);
-        document.getElementById('weekly-target-input').value = "";
-        updateBudgetProgress();
-    }
-}
-
-function updateBudgetProgress() {
-    const progressEl = document.getElementById('budget-progress-bar');
-    if (!progressEl) return; // Dashboard not visible, skip
-
-    const now = Date.now();
-    const oneWeekAgo = now - (7 * 24 * 60 * 60 * 1000);
-    const weekSpend = STATE.outbound
-        .filter(i => i.timestamp > oneWeekAgo)
-        .reduce((s, i) => s + i.cost, 0);
-
-    const target = STATE.weeklyTarget;
-
-    document.getElementById('budget-spend-display').innerText =
-        `KES ${weekSpend.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
-    document.getElementById('budget-target-display').innerText =
-        target > 0 ? `TARGET: KES ${target.toLocaleString()}` : 'TARGET: NOT SET';
-
-    const pct = target > 0 ? Math.min((weekSpend / target) * 100, 100) : 0;
-    progressEl.style.width = pct + '%';
-    progressEl.style.background = pct >= 100
-        ? 'var(--danger)'
-        : pct > 70
-            ? '#ffaa00'
-            : 'var(--neon-green)';
-
-    const pctEl = document.getElementById('budget-pct-display');
-    if (pctEl) pctEl.innerText = target > 0 ? `${pct.toFixed(0)}%` : '--%';
-}
-
-// ============================================================
-// v6.0 TACTICAL ADVISOR ENGINE (ZERO-CLOUD)
-// ============================================================
-let hasAdvisorGreeted = false;
-
-function toggleAdvisor() {
-    const sidebar = document.getElementById('advisor-sidebar');
-    sidebar.classList.toggle('active');
-    
-    // First time opening this session? Generate a context-aware greeting.
-    if (sidebar.classList.contains('active') && !hasAdvisorGreeted) {
-        generateGreeting();
-        hasAdvisorGreeted = true;
-    }
-}
-
-function generateGreeting() {
-    const now = Date.now();
-    const oneWeekAgo = now - (7 * 24 * 60 * 60 * 1000);
-    const weekSpend = STATE.outbound.filter(i => i.timestamp > oneWeekAgo).reduce((s, i) => s + i.cost, 0);
-    const target = STATE.weeklyTarget;
-    
-    let msg = "";
-    if (STATE.balance < 500) {
-        msg = "SYSTEM ALERT: Liquidity is critically low (Under 500 KES). Recommending a total freeze on non-essential outbound trades until next inflow.";
-    } else if (target > 0 && weekSpend > target) {
-        msg = `Sentry triggered. We've hit Overburn mode. You are KES ${(weekSpend - target).toLocaleString()} over the weekly ceiling. Let's optimize tomorrow's spending.`;
-    } else if (weekSpend < STATE.lastWeekSpend && STATE.lastWeekSpend > 0) {
-        msg = `Legendary efficiency. You are tracking lower than last week's burn rate. Liquidity engine is optimal.`;
-    } else {
-        msg = "Tactical Advisor online. Systems look stable. What parameters are we reviewing today?";
-    }
-    
-    appendMessage('ai', msg);
-}
-
-function appendMessage(sender, text) {
-    const chatOutput = document.getElementById('chat-output');
-    const msgDiv = document.createElement('div');
-    msgDiv.className = `chat-msg msg-${sender}`;
-    msgDiv.innerText = text;
-    chatOutput.appendChild(msgDiv);
-    chatOutput.scrollTop = chatOutput.scrollHeight;
-}
-
-function handleChatEnter(e) {
-    if (e.key === 'Enter') sendMessage();
-}
-
+// 3. TACTICAL ADVISOR ENGINE (2-Second Suspense Delay)
 function sendMessage() {
     const input = document.getElementById('user-msg');
+    if (!input) return;
     const text = input.value.trim();
     if (!text) return;
 
-    // 1. Show user message
     appendMessage('user', text);
     input.value = "";
+    appendMessage('ai', "... ANALYZING LOCAL DATABASE ... ");
 
-    // 2. Local AI Processing (Zero-Cloud response simulation)
-
-
-function sendMessage() {
-    const input = document.getElementById('user-msg');
-    const text = input.value.trim().toLowerCase();
-    if (!text) return;
-
-    appendMessage('user', text);
-    input.value = "";
-
-    // Show a "Scanning..." indicator so the user knows the AI is working
-    const chatOutput = document.getElementById('chat-output');
-    const loadingDiv = document.createElement('div');
-    loadingDiv.className = 'chat-msg msg-ai';
-    loadingDiv.id = 'ai-loading';
-    loadingDiv.innerText = "... SCANNING DATABASE ...";
-    chatOutput.appendChild(loadingDiv);
-    chatOutput.scrollTop = chatOutput.scrollHeight;
-
-    // INCREASED DELAY: 1.5 Seconds for "Heavy Processing" feel
     setTimeout(() => {
-        // Remove the loading indicator
-        const loader = document.getElementById('ai-loading');
-        if (loader) loader.remove();
+        const chatOutput = document.getElementById('chat-output');
+        if (chatOutput && chatOutput.lastChild) chatOutput.removeChild(chatOutput.lastChild);
 
         let response = "";
+        const lowerText = text.toLowerCase();
         const now = Date.now();
         const recentOut = STATE.outbound.filter(i => i.timestamp > (now - 7 * 24 * 60 * 60 * 1000));
-        const weekSpend = recentOut.reduce((s, i) => s + i.cost, 0);
-
-        // 1. LEAKAGE & MAMA DUA MODULE
-        if (text.includes("leakage") || text.includes("advice") || text.includes("spending")) {
+        
+        if (lowerText.includes("leakage") || lowerText.includes("advice")) {
             const usageMap = {};
             recentOut.forEach(item => {
                 const key = (item.commodity || "general").toLowerCase();
                 usageMap[key] = (usageMap[key] || 0) + item.cost;
             });
             let topComm = Object.keys(usageMap).reduce((a, b) => usageMap[a] > usageMap[b] ? a : b, "none");
-            let topAmt = usageMap[topComm];
-
-            if (topComm !== "none" && topAmt > 0) {
-                response = `Analysis complete. Primary leakage: "${topComm.toUpperCase()}" (KES ${topAmt.toLocaleString()}). `;
-                if (topComm.includes("supper") || topComm.includes("food")) {
-                    response += "Strategically, Mama Dua Kiosk or the 'Small-Gate' vendors offer better margins for supper than the main mess.";
-                } else if (topComm.includes("fare") || topComm.includes("town") || topComm.includes("bike")) {
-                    response += "Transport burn detected. Walking to the 'Lurambi' stage instead of taking a bike from inside campus saves KES 30 per trip.";
-                } else if (topComm.includes("print") || topComm.includes("assignment")) {
-                    response += "Academic leakage. Bulk printing is 40% cheaper at the stalls behind the Science Block.";
-                } else {
-                    response += `To stabilize liquidity, try to reduce "${topComm}" spending by 15% next week.`;
-                }
-            } else { response = "Inadequate logs. Tag your entries (e.g., 'Supper') so I can identify leakages."; }
-        } 
-
-        // 2. SAFETY & LIMITS MODULE
-        else if (text.includes("limit") || text.includes("today") || text.includes("can i spend")) {
-            const remainingBudget = STATE.weeklyTarget - weekSpend;
-            const daysLeft = 7 - (Math.floor((now - new Date(STATE.weekStartDate)) / (1000 * 60 * 60 * 24)) % 7);
-            const safeDaily = remainingBudget > 0 ? (remainingBudget / Math.max(daysLeft, 1)).toFixed(0) : 0;
             
-            response = remainingBudget > 0 
-                ? `Safety Parameter: You can spend KES ${safeDaily} daily for the next ${daysLeft} days to stay within ceiling.`
-                : `WARNING: Budget ceiling breached. Current liquidity does not support further non-essential outbound trades.`;
+            if (topComm !== "none") {
+                response = `Leakage identified: "${topComm.toUpperCase()}". `;
+                if (topComm.includes("supper") || topComm.includes("food")) {
+                    response += "Advice: Mama Dua Kiosk offers better margins than the canteen for late-day trades.";
+                } else if (topComm.includes("fare") || topComm.includes("bike")) {
+                    response += "Advice: Walking to Lurambi stage saves KES 30 per trip.";
+                } else {
+                    response += `Try to reduce ${topComm} spending by 15% next week.`;
+                }
+            } else {
+                response = "Inadequate data. Log specific commodities (e.g. 'Supper') for a deep-scan report.";
+            }
+        } 
+        else if (lowerText.includes("limit") || lowerText.includes("today")) {
+            const weekSpend = recentOut.reduce((s, i) => s + i.cost, 0);
+            const remaining = STATE.weeklyTarget - weekSpend;
+            response = remaining > 0 
+                ? `Safety Parameter: KES ${remaining.toLocaleString()} left in your weekly ceiling.`
+                : `WARNING: Budget breached. Every trade now is an Overburn.`;
         }
-
-        // 3. SECURITY & PRIVACY MODULE
-        else if (text.includes("secure") || text.includes("private") || text.includes("cloud")) {
-            response = "APEX // FLUX Protocol is 100% Local. Your M-Pesa data and 'Commodity' tags are stored in your browser's encrypted vault. No external servers have accessed this conversation.";
-        }
-
-        // 4. EFFICIENCY & XP MODULE
-        else if (text.includes("xp") || text.includes("rank") || text.includes("level")) {
-            response = `Current XP: ${STATE.xp}. To level up faster, provide specific 'Commodity' tags for every transaction and stay under your weekly target for 3 consecutive days.`;
-        }
-
-        // 5. DATA CLEANING MODULE (The Vortex)
-        else if (text.includes("clean") || text.includes("vortex") || text.includes("labels")) {
-            response = "Vortex Engine is active. I am currently normalizing P2P names and shortening Safaricom strings to keep your 'Vitals' display neat.";
-        }
-
-        // FALLBACK
         else {
-            response = "Tactical Advisor standing by. I can analyze 'Leakages', 'Daily Limits', 'Security Protocols', and 'XP Efficiency'. Specify parameter for scan.";
+            response = "Tactical Advisor standing by. I can scan for 'Leakages', 'Daily Limits', or 'Trends'.";
         }
 
         appendMessage('ai', response);
-    }, 1500); // 1.5 SECOND DELAY FOR "HEAVY PROCESSING" FEEL
-}
-// ... existing code above ...
-
-function sendMessage() {
-    // The big block of code I gave you previously
-    // It calls appendMessage('user', text) inside it
+    }, 2000); 
 }
 
-// PASTE THE HELPER HERE (Outside and below sendMessage)
+// 4. CORE SYSTEM HELPERS
 function appendMessage(sender, text) {
     const chatOutput = document.getElementById('chat-output');
-    if (!chatOutput) return; // Safety check
-    
+    if (!chatOutput) return;
     const msgDiv = document.createElement('div');
     msgDiv.className = `chat-msg msg-${sender}`;
     msgDiv.innerText = text;
     chatOutput.appendChild(msgDiv);
-    
-    // Auto-scroll to the bottom so you see the latest reply
     chatOutput.scrollTop = chatOutput.scrollHeight;
+}
+
+function toggleAdvisor() {
+    const sidebar = document.getElementById('advisor-sidebar');
+    if(sidebar) sidebar.classList.toggle('active');
+}
+
+function handleChatEnter(e) {
+    if (e.key === 'Enter') sendMessage();
 }
