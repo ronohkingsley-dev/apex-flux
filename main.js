@@ -421,27 +421,7 @@ function sendMessage() {
     input.value = "";
 
     // 2. Local AI Processing (Zero-Cloud response simulation)
-    setTimeout(() => {
-        let response = "";
-        const lowerText = text.toLowerCase();
-        
-        if (lowerText.includes("spend") || lowerText.includes("burn")) {
-            const now = Date.now();
-            const weekSpend = STATE.outbound.filter(i => i.timestamp > (now - 7 * 24 * 60 * 60 * 1000)).reduce((s, i) => s + i.cost, 0);
-            response = `Current 7-day burn rate is KES ${weekSpend.toLocaleString()}.`;
-        } else if (lowerText.includes("last week")) {
-            response = `Last week's logged burn rate was KES ${STATE.lastWeekSpend.toLocaleString()}.`;
-        } else if (lowerText.includes("balance") || lowerText.includes("liquidity")) {
-            response = `Current liquidity stands at KES ${STATE.balance.toLocaleString()}.`;
-        } else if (lowerText.includes("hello") || lowerText.includes("hi")) {
-            response = "Ready when you are. Checking leakages or logging an entry?";
-        } else {
-            response = "I am restricted to local data access (Zero-Cloud). Try asking about your 'burn rate', 'balance', or 'last week'.";
-        }
-        
-        appendMessage('ai', response);
-    }, 400); // 400ms delay to feel natural
-}
+
 
 function sendMessage() {
     const input = document.getElementById('user-msg');
