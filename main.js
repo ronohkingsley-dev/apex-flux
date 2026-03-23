@@ -5,6 +5,7 @@ const STATE = {
     xp: parseInt(localStorage.getItem('flux_xp')) || 100, // Initial 100 XP
     lastWeekSpend: parseFloat(localStorage.getItem('flux_last_spend')) || 0,
     weekStartDate: localStorage.getItem('flux_week_start') || new Date().toISOString(),
+    weeklyTarget: parseFloat(localStorage.getItem('flux_weekly_target')) || 0,
     isPrivate: true,
     pin: "1234"
 };
@@ -110,6 +111,7 @@ function syncUI() {
     renderLists();
     updateChart();
     generateWeeklyReport();
+    updateBudgetProgress();
 }
 
 // --- 4. SMART SHREDDER ---
@@ -130,11 +132,23 @@ function shredSMS() {
             const nameMatch = text.match(/sent to\s(.*?)\s\d/);
             label = nameMatch ? nameMatch[1] : "SENT MONEY";
             category = "Transfer";
-        } else if (text.includes("Airtime") || text.includes("Bundle")) {
-            label = "AIRTIME/DATA";
+        } else if (text.includes("Bundle") || text.includes("DATA BUNDLES") || text.includes("data bundle")) {
+            label = "DATA";
             category = "Utility";
+        } else if (text.includes("Airtime") || text.includes("airtime")) {
+            label = "AIRTIME";
+            category = "Utility";
+        } else if (text.includes("Pay Bill") || text.includes("Paybill") || text.includes("paybill")) {
+            label = "PAYBILL";
+            category = "Utility";
+        } else if (text.includes("Buy Goods") || text.includes("Merchant") || text.includes("merchant")) {
+            label = "TILL PMT";
+            category = "General";
+        } else if (text.includes("withdraw") || text.includes("Withdraw")) {
+            label = "WITHDRAWAL";
+            category = "General";
         } else if (text.includes("Fuliza")) {
-            label = "FULIZA REPAY";
+            label = "FULIZA";
             category = "Debt";
         }
 
@@ -233,10 +247,78 @@ function exportBlueprint() {
 let enteredPin = "";
 function inputPin(n) { if (enteredPin.length < 4) { enteredPin += n; document.getElementById('pin-input').value = "*".repeat(enteredPin.length); } }
 function clearPin() { enteredPin = ""; document.getElementById('pin-input').value = ""; }
-function verifyPin() { if (enteredPin === STATE.pin) { document.getElementById('guardian-overlay').style.display = 'none'; } else { alert("DENIED"); clearPin(); } }
+function verifyPin() {
+    if (enteredPin === STATE.pin) {
+        document.getElementById('guardian-overlay').style.display = 'none';
+        document.querySelector('.dashboard-wrapper').style.display = 'flex';
+        syncUI();
+        updateBudgetProgress();
+    } else {
+        alert("DENIED");
+        clearPin();
+    }
+}
 function openSecureModal() { if (!STATE.isPrivate) { STATE.isPrivate = true; syncUI(); return; } document.getElementById('secure-modal').style.display = 'flex'; }
 function closeSecureModal() { document.getElementById('secure-modal').style.display = 'none'; }
 function confirmSecureToggle() { const p = document.getElementById('modal-pin').value; if (p === STATE.pin) { STATE.isPrivate = false; closeSecureModal(); document.getElementById('modal-pin').value = ""; syncUI(); } else { alert("INVALID"); } }
 function initChart() { const ctx = document.getElementById('fluxChart').getContext('2d'); fluxChart = new Chart(ctx, { type: 'line', data: { labels: [], datasets: [{ borderColor: '#00ff41', data: [], tension: 0.3 }] }, options: { plugins: { legend: { display: false } }, scales: { y: { grid: { color: '#111' } } } } }); }
 function updateChart() { if (!fluxChart) return; fluxChart.data.labels = STATE.outbound.slice(-7).map(i => i.name); fluxChart.data.datasets[0].data = STATE.outbound.slice(-7).map(i => i.cost); fluxChart.update(); }
-function showModule(id) { document.querySelectorAll('.module-content').forEach(m => m.style.display='none'); document.getElementById('mod-'+id).style.display='block'; document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active')); event.currentTarget.classList.add('active'); }
+function showModule(id) {
+    document.querySelectorAll('.module-content').forEach(m => m.style.display='none');
+    document.getElementById('mod-'+id).style.display='block';
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    try { event.currentTarget.classList.add('active'); } catch(e) {}
+}
+
+// --- 9. DASHBOARD NAVIGATION ---
+function launchModule(id) {
+    document.getElementById('dashboard-view').style.display = 'none';
+    document.getElementById('modules-view').style.display = 'flex';
+    showModule(id);
+}
+
+function goToDashboard() {
+    document.getElementById('modules-view').style.display = 'none';
+    document.getElementById('dashboard-view').style.display = 'block';
+    updateBudgetProgress();
+}
+
+// --- 10. BUDGET CONTROL FUNCTION ---
+function setWeeklyTarget() {
+    const val = parseFloat(document.getElementById('weekly-target-input').value);
+    if (!isNaN(val) && val > 0) {
+        STATE.weeklyTarget = val;
+        localStorage.setItem('flux_weekly_target', val);
+        document.getElementById('weekly-target-input').value = "";
+        updateBudgetProgress();
+    }
+}
+
+function updateBudgetProgress() {
+    const progressEl = document.getElementById('budget-progress-bar');
+    if (!progressEl) return; // Dashboard not visible, skip
+
+    const now = Date.now();
+    const oneWeekAgo = now - (7 * 24 * 60 * 60 * 1000);
+    const weekSpend = STATE.outbound
+        .filter(i => i.timestamp > oneWeekAgo)
+        .reduce((s, i) => s + i.cost, 0);
+
+    const target = STATE.weeklyTarget;
+
+    document.getElementById('budget-spend-display').innerText =
+        `KES ${weekSpend.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+    document.getElementById('budget-target-display').innerText =
+        target > 0 ? `TARGET: KES ${target.toLocaleString()}` : 'TARGET: NOT SET';
+
+    const pct = target > 0 ? Math.min((weekSpend / target) * 100, 100) : 0;
+    progressEl.style.width = pct + '%';
+    progressEl.style.background = pct >= 100
+        ? 'var(--danger)'
+        : pct > 70
+            ? '#ffaa00'
+            : 'var(--neon-green)';
+
+    const pctEl = document.getElementById('budget-pct-display');
+    if (pctEl) pctEl.innerText = target > 0 ? `${pct.toFixed(0)}%` : '--%';
+}
