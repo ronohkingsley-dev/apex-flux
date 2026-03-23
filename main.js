@@ -253,6 +253,8 @@ function verifyPin() {
         document.querySelector('.dashboard-wrapper').style.display = 'flex';
         syncUI();
         updateBudgetProgress();
+
+    document.getElementById('advisor-trigger').style.display = 'block';
     } else {
         alert("DENIED");
         clearPin();
@@ -321,4 +323,85 @@ function updateBudgetProgress() {
 
     const pctEl = document.getElementById('budget-pct-display');
     if (pctEl) pctEl.innerText = target > 0 ? `${pct.toFixed(0)}%` : '--%';
+}
+
+// ============================================================
+// v6.0 TACTICAL ADVISOR ENGINE (ZERO-CLOUD)
+// ============================================================
+let hasAdvisorGreeted = false;
+
+function toggleAdvisor() {
+    const sidebar = document.getElementById('advisor-sidebar');
+    sidebar.classList.toggle('active');
+    
+    // First time opening this session? Generate a context-aware greeting.
+    if (sidebar.classList.contains('active') && !hasAdvisorGreeted) {
+        generateGreeting();
+        hasAdvisorGreeted = true;
+    }
+}
+
+function generateGreeting() {
+    const now = Date.now();
+    const oneWeekAgo = now - (7 * 24 * 60 * 60 * 1000);
+    const weekSpend = STATE.outbound.filter(i => i.timestamp > oneWeekAgo).reduce((s, i) => s + i.cost, 0);
+    const target = STATE.weeklyTarget;
+    
+    let msg = "";
+    if (STATE.balance < 500) {
+        msg = "SYSTEM ALERT: Liquidity is critically low (Under 500 KES). Recommending a total freeze on non-essential outbound trades until next inflow.";
+    } else if (target > 0 && weekSpend > target) {
+        msg = `Sentry triggered. We've hit Overburn mode. You are KES ${(weekSpend - target).toLocaleString()} over the weekly ceiling. Let's optimize tomorrow's spending.`;
+    } else if (weekSpend < STATE.lastWeekSpend && STATE.lastWeekSpend > 0) {
+        msg = `Legendary efficiency. You are tracking lower than last week's burn rate. Liquidity engine is optimal.`;
+    } else {
+        msg = "Tactical Advisor online. Systems look stable. What parameters are we reviewing today?";
+    }
+    
+    appendMessage('ai', msg);
+}
+
+function appendMessage(sender, text) {
+    const chatOutput = document.getElementById('chat-output');
+    const msgDiv = document.createElement('div');
+    msgDiv.className = `chat-msg msg-${sender}`;
+    msgDiv.innerText = text;
+    chatOutput.appendChild(msgDiv);
+    chatOutput.scrollTop = chatOutput.scrollHeight;
+}
+
+function handleChatEnter(e) {
+    if (e.key === 'Enter') sendMessage();
+}
+
+function sendMessage() {
+    const input = document.getElementById('user-msg');
+    const text = input.value.trim();
+    if (!text) return;
+
+    // 1. Show user message
+    appendMessage('user', text);
+    input.value = "";
+
+    // 2. Local AI Processing (Zero-Cloud response simulation)
+    setTimeout(() => {
+        let response = "";
+        const lowerText = text.toLowerCase();
+        
+        if (lowerText.includes("spend") || lowerText.includes("burn")) {
+            const now = Date.now();
+            const weekSpend = STATE.outbound.filter(i => i.timestamp > (now - 7 * 24 * 60 * 60 * 1000)).reduce((s, i) => s + i.cost, 0);
+            response = `Current 7-day burn rate is KES ${weekSpend.toLocaleString()}.`;
+        } else if (lowerText.includes("last week")) {
+            response = `Last week's logged burn rate was KES ${STATE.lastWeekSpend.toLocaleString()}.`;
+        } else if (lowerText.includes("balance") || lowerText.includes("liquidity")) {
+            response = `Current liquidity stands at KES ${STATE.balance.toLocaleString()}.`;
+        } else if (lowerText.includes("hello") || lowerText.includes("hi")) {
+            response = "Ready when you are. Checking leakages or logging an entry?";
+        } else {
+            response = "I am restricted to local data access (Zero-Cloud). Try asking about your 'burn rate', 'balance', or 'last week'.";
+        }
+        
+        appendMessage('ai', response);
+    }, 400); // 400ms delay to feel natural
 }
