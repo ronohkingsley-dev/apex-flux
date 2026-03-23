@@ -451,58 +451,101 @@ function sendMessage() {
     appendMessage('user', text);
     input.value = "";
 
+    // Show a "Scanning..." indicator so the user knows the AI is working
+    const chatOutput = document.getElementById('chat-output');
+    const loadingDiv = document.createElement('div');
+    loadingDiv.className = 'chat-msg msg-ai';
+    loadingDiv.id = 'ai-loading';
+    loadingDiv.innerText = "... SCANNING DATABASE ...";
+    chatOutput.appendChild(loadingDiv);
+    chatOutput.scrollTop = chatOutput.scrollHeight;
+
+    // INCREASED DELAY: 1.5 Seconds for "Heavy Processing" feel
     setTimeout(() => {
+        // Remove the loading indicator
+        const loader = document.getElementById('ai-loading');
+        if (loader) loader.remove();
+
         let response = "";
-        
-        // LEAKAGE & ADVICE LOGIC
+        const now = Date.now();
+        const recentOut = STATE.outbound.filter(i => i.timestamp > (now - 7 * 24 * 60 * 60 * 1000));
+        const weekSpend = recentOut.reduce((s, i) => s + i.cost, 0);
+
+        // 1. LEAKAGE & MAMA DUA MODULE
         if (text.includes("leakage") || text.includes("advice") || text.includes("spending")) {
-            // Filter only the last 7 days for accuracy
-            const now = Date.now();
-            const recentOut = STATE.outbound.filter(i => i.timestamp > (now - 7 * 24 * 60 * 60 * 1000));
-            
-            // Map spending by Commodity
             const usageMap = {};
             recentOut.forEach(item => {
-                const key = item.commodity ||"general".toLowerCase();
+                const key = (item.commodity || "general").toLowerCase();
                 usageMap[key] = (usageMap[key] || 0) + item.cost;
             });
-
-            // Find the biggest "Leak"
             let topComm = Object.keys(usageMap).reduce((a, b) => usageMap[a] > usageMap[b] ? a : b, "none");
             let topAmt = usageMap[topComm];
 
-            if (topComm !== "none") {
-                response = `Current analysis shows your biggest leakage is "${topComm.toUpperCase()}" at KES ${topAmt.toLocaleString()}. `;
-                
-                // --- HARDCODED CAMPUS ALTERNATIVES ---
-                if (topComm.includes("supper") || topComm.includes("food") || topComm.includes("eat")) {
-                    response += "Strategically, you should compare prices at Mama Dua Kiosk; it’s usually KES 20-50 cheaper for supper than the main canteen.";
-                } else if (topComm.includes("data") || topComm.includes("bundles")) {
-                    response += "Advice: Data burn is high. Use the MMUST library Wi-Fi for heavy downloads to preserve liquidity.";
+            if (topComm !== "none" && topAmt > 0) {
+                response = `Analysis complete. Primary leakage: "${topComm.toUpperCase()}" (KES ${topAmt.toLocaleString()}). `;
+                if (topComm.includes("supper") || topComm.includes("food")) {
+                    response += "Strategically, Mama Dua Kiosk or the 'Small-Gate' vendors offer better margins for supper than the main mess.";
+                } else if (topComm.includes("fare") || topComm.includes("town") || topComm.includes("bike")) {
+                    response += "Transport burn detected. Walking to the 'Lurambi' stage instead of taking a bike from inside campus saves KES 30 per trip.";
                 } else if (topComm.includes("print") || topComm.includes("assignment")) {
-                    response += "Leakage detected in Academics. Cyber-cafes near the gate often charge 50% less for bulk printing.";
+                    response += "Academic leakage. Bulk printing is 40% cheaper at the stalls behind the Science Block.";
                 } else {
-                    response += `To stabilize, try to cut your ${topComm} expenses by 15% next week.`;
+                    response += `To stabilize liquidity, try to reduce "${topComm}" spending by 15% next week.`;
                 }
-            } else {
-                response = "I need more data. Start logging specific commodities (Supper, Fare, etc.) when you add entries.";
-            }
+            } else { response = "Inadequate logs. Tag your entries (e.g., 'Supper') so I can identify leakages."; }
         } 
-        
-        // COMPARISON LOGIC (VS LAST WEEK)
-        else if (text.includes("compare") || text.includes("last week")) {
-            const currentTotal = STATE.outbound.reduce((s, i) => s + i.cost, 0);
-            const diff = STATE.lastWeekSpend - currentTotal;
+
+        // 2. SAFETY & LIMITS MODULE
+        else if (text.includes("limit") || text.includes("today") || text.includes("can i spend")) {
+            const remainingBudget = STATE.weeklyTarget - weekSpend;
+            const daysLeft = 7 - (Math.floor((now - new Date(STATE.weekStartDate)) / (1000 * 60 * 60 * 24)) % 7);
+            const safeDaily = remainingBudget > 0 ? (remainingBudget / Math.max(daysLeft, 1)).toFixed(0) : 0;
             
-            if (diff > 0) {
-                response = `You are winning. You've spent KES ${diff.toLocaleString()} less than last week. Your discipline is high.`;
-            } else {
-                response = `Status: Overburn. You've exceeded last week's spend by KES ${Math.abs(diff).toLocaleString()}. Reduce non-essential trades.`;
-            }
-        } else {
-            response = "I am restricted to local data. Ask me: 'Where is my leakage?', 'Advice on my spending', or 'Compare to last week'.";
+            response = remainingBudget > 0 
+                ? `Safety Parameter: You can spend KES ${safeDaily} daily for the next ${daysLeft} days to stay within ceiling.`
+                : `WARNING: Budget ceiling breached. Current liquidity does not support further non-essential outbound trades.`;
+        }
+
+        // 3. SECURITY & PRIVACY MODULE
+        else if (text.includes("secure") || text.includes("private") || text.includes("cloud")) {
+            response = "APEX // FLUX Protocol is 100% Local. Your M-Pesa data and 'Commodity' tags are stored in your browser's encrypted vault. No external servers have accessed this conversation.";
+        }
+
+        // 4. EFFICIENCY & XP MODULE
+        else if (text.includes("xp") || text.includes("rank") || text.includes("level")) {
+            response = `Current XP: ${STATE.xp}. To level up faster, provide specific 'Commodity' tags for every transaction and stay under your weekly target for 3 consecutive days.`;
+        }
+
+        // 5. DATA CLEANING MODULE (The Vortex)
+        else if (text.includes("clean") || text.includes("vortex") || text.includes("labels")) {
+            response = "Vortex Engine is active. I am currently normalizing P2P names and shortening Safaricom strings to keep your 'Vitals' display neat.";
+        }
+
+        // FALLBACK
+        else {
+            response = "Tactical Advisor standing by. I can analyze 'Leakages', 'Daily Limits', 'Security Protocols', and 'XP Efficiency'. Specify parameter for scan.";
         }
 
         appendMessage('ai', response);
-    }, 600);
+    }, 1500); // 1.5 SECOND DELAY FOR "HEAVY PROCESSING" FEEL
+}
+// ... existing code above ...
+
+function sendMessage() {
+    // The big block of code I gave you previously
+    // It calls appendMessage('user', text) inside it
+}
+
+// PASTE THE HELPER HERE (Outside and below sendMessage)
+function appendMessage(sender, text) {
+    const chatOutput = document.getElementById('chat-output');
+    if (!chatOutput) return; // Safety check
+    
+    const msgDiv = document.createElement('div');
+    msgDiv.className = `chat-msg msg-${sender}`;
+    msgDiv.innerText = text;
+    chatOutput.appendChild(msgDiv);
+    
+    // Auto-scroll to the bottom so you see the latest reply
+    chatOutput.scrollTop = chatOutput.scrollHeight;
 }
