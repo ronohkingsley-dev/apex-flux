@@ -206,18 +206,55 @@ function getEngTier(xp) {
 }
 
 function addManualEntry() {
-    const name = document.getElementById('item-name').value;
-    const cost = parseFloat(document.getElementById('item-cost').value);
-    const cat = document.getElementById('item-category').value;
-    if (name && !isNaN(cost)) {
-        STATE.outbound.push({ name, cost, cat, timestamp: Date.now() });
+    const costInput = document.getElementById('manual-cost');
+    const recipientInput = document.getElementById('manual-recipient');
+    const categoryInput = document.getElementById('manual-category');
+
+    const cost = parseFloat(costInput.value);
+    const recipient = recipientInput.value || "General Trade";
+    const category = categoryInput.value;
+
+    if (!isNaN(cost) && cost > 0) {
+        // --- THE ACTIVE AUDITOR UPGRADE ---
+        // This popup gathers the "Context" the Advisor needs to give real advice.
+        const commodity = prompt(`TACTICAL_INPUT: What was this KES ${cost.toLocaleString()} for? (e.g., Supper, Data, Fare, Printing)`, "General");
+
+        const entry = {
+            id: Date.now(),
+            cost: cost,
+            recipient: recipient,
+            category: category,
+            commodity: (commodity || "Uncategorized").trim(), // The "Brain" of the AI
+            timestamp: Date.now()
+        };
+
+        // Update State
+        STATE.outbound.push(entry);
         STATE.balance -= cost;
+        
+        // Bonus XP for providing tactical detail
+        if (commodity && commodity.toLowerCase() !== "general") {
+            STATE.xp += 5; 
+            console.log("XP_BOOST: Contextual data logged.");
+        }
+
+        // Save to LocalStorage
+        localStorage.setItem('flux_out', JSON.stringify(STATE.outbound));
+        localStorage.setItem('flux_bal', STATE.balance);
+
+        // Update UI
         syncUI();
-        document.getElementById('item-name').value = "";
-        document.getElementById('item-cost').value = "";
+        updateBudgetProgress();
+        
+        // Reset Inputs
+        costInput.value = "";
+        recipientInput.value = "";
+        
+        console.log(`LOG_SUCCESS: ${entry.commodity} logged to Outbound History.`);
+    } else {
+        alert("CRITICAL_ERROR: Invalid cost parameters.");
     }
 }
-
 function generateWeeklyReport() {
     const now = Date.now();
     const oneWeekAgo = now - (7 * 24 * 60 * 60 * 1000);
@@ -404,4 +441,68 @@ function sendMessage() {
         
         appendMessage('ai', response);
     }, 400); // 400ms delay to feel natural
+}
+
+function sendMessage() {
+    const input = document.getElementById('user-msg');
+    const text = input.value.trim().toLowerCase();
+    if (!text) return;
+
+    appendMessage('user', text);
+    input.value = "";
+
+    setTimeout(() => {
+        let response = "";
+        
+        // LEAKAGE & ADVICE LOGIC
+        if (text.includes("leakage") || text.includes("advice") || text.includes("spending")) {
+            // Filter only the last 7 days for accuracy
+            const now = Date.now();
+            const recentOut = STATE.outbound.filter(i => i.timestamp > (now - 7 * 24 * 60 * 60 * 1000));
+            
+            // Map spending by Commodity
+            const usageMap = {};
+            recentOut.forEach(item => {
+                const key = item.commodity ||"general".toLowerCase();
+                usageMap[key] = (usageMap[key] || 0) + item.cost;
+            });
+
+            // Find the biggest "Leak"
+            let topComm = Object.keys(usageMap).reduce((a, b) => usageMap[a] > usageMap[b] ? a : b, "none");
+            let topAmt = usageMap[topComm];
+
+            if (topComm !== "none") {
+                response = `Current analysis shows your biggest leakage is "${topComm.toUpperCase()}" at KES ${topAmt.toLocaleString()}. `;
+                
+                // --- HARDCODED CAMPUS ALTERNATIVES ---
+                if (topComm.includes("supper") || topComm.includes("food") || topComm.includes("eat")) {
+                    response += "Strategically, you should compare prices at Mama Dua Kiosk; it’s usually KES 20-50 cheaper for supper than the main canteen.";
+                } else if (topComm.includes("data") || topComm.includes("bundles")) {
+                    response += "Advice: Data burn is high. Use the MMUST library Wi-Fi for heavy downloads to preserve liquidity.";
+                } else if (topComm.includes("print") || topComm.includes("assignment")) {
+                    response += "Leakage detected in Academics. Cyber-cafes near the gate often charge 50% less for bulk printing.";
+                } else {
+                    response += `To stabilize, try to cut your ${topComm} expenses by 15% next week.`;
+                }
+            } else {
+                response = "I need more data. Start logging specific commodities (Supper, Fare, etc.) when you add entries.";
+            }
+        } 
+        
+        // COMPARISON LOGIC (VS LAST WEEK)
+        else if (text.includes("compare") || text.includes("last week")) {
+            const currentTotal = STATE.outbound.reduce((s, i) => s + i.cost, 0);
+            const diff = STATE.lastWeekSpend - currentTotal;
+            
+            if (diff > 0) {
+                response = `You are winning. You've spent KES ${diff.toLocaleString()} less than last week. Your discipline is high.`;
+            } else {
+                response = `Status: Overburn. You've exceeded last week's spend by KES ${Math.abs(diff).toLocaleString()}. Reduce non-essential trades.`;
+            }
+        } else {
+            response = "I am restricted to local data. Ask me: 'Where is my leakage?', 'Advice on my spending', or 'Compare to last week'.";
+        }
+
+        appendMessage('ai', response);
+    }, 600);
 }
