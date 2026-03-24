@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>APEX // FLUX V4.5//</title>
+    <title>APEX // FLUX V6.0//</title>
     <link rel="icon" type="image/png" href="flux-icon.png?v=99">
     <link rel="apple-touch-icon" href="flux-icon.png?v=99">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
@@ -14,7 +14,7 @@
 
     <!-- ============================================
          GUARDIAN SENTRY — UNCHANGED
-         ============================================ -->
+    ============================================ -->
     <div id="guardian-overlay" class="overlay">
         <div class="auth-card">
             <div class="auth-header">
@@ -36,20 +36,20 @@
                 <button onclick="inputPin(9)">9</button>
                 <button onclick="clearPin()" class="btn-alt">C</button>
                 <button onclick="inputPin(0)">0</button>
-                <button onclick="verifyPin()" class="btn-primary">➔</button>
+                <button onclick="verifyPin()" class="btn-primary">&#10152;</button>
             </div>
         </div>
     </div>
 
     <!-- ============================================
          COMPACT BIOMETRIC AUTHORIZATION BAR — UNCHANGED
-         ============================================ -->
+    ============================================ -->
     <div id="secure-modal" class="modal-overlay" style="display:none;">
         <div class="compact-auth-bar">
             <span class="compact-auth-label">AUTH //</span>
-            <input type="password" id="modal-pin" class="compact-pin-input" maxlength="4" placeholder="••••">
+            <input type="password" id="modal-pin" class="compact-pin-input" maxlength="4" placeholder="&bull;&bull;&bull;&bull;">
             <div class="compact-auth-actions">
-                <button class="compact-btn compact-btn-cancel" onclick="closeSecureModal()">✕</button>
+                <button class="compact-btn compact-btn-cancel" onclick="closeSecureModal()">&#10005;</button>
                 <button class="compact-btn compact-btn-confirm" onclick="confirmSecureToggle()">CONFIRM</button>
             </div>
         </div>
@@ -57,207 +57,266 @@
 
     <!-- ============================================
          APP SHELL — hidden until Sentry is passed
-         ============================================ -->
+    ============================================ -->
     <div class="dashboard-wrapper" style="display:none;">
 
-        <!-- SHARED HEADER — always visible once authenticated -->
+        <!-- SHARED HUD HEADER -->
         <header class="main-hud">
             <div class="brand">APEX <span class="flux-span">// FLUX</span></div>
-            <div class="sys-status">STATUS: <span id="sys-msg">OPTIMAL</span> // <span id="tier-name" class="neon-text">CAD INTERN</span></div>
+            <div class="sys-status">
+                <span class="status-pip"></span>
+                <span id="sys-msg">OPTIMAL</span>
+                &nbsp;//&nbsp;
+                <span id="tier-name" class="neon-text">CAD INTERN</span>
+            </div>
         </header>
 
         <!-- ============================================
-             NEW: DASHBOARD VIEW
-             ============================================ -->
+             COMMAND CENTER — DASHBOARD VIEW (v6.0)
+        ============================================ -->
         <div id="dashboard-view">
             <div class="dash-grid">
 
-                <!-- CARD 1: ZERO-CLOUD SECURITY -->
-                <div class="dash-card glass-card">
-                    <div class="dash-card-icon">⬡</div>
-                    <div class="dash-card-header">ZERO-CLOUD ARCHITECTURE</div>
-                    <div class="security-items">
-                        <div class="sec-item">
-                            <span class="sec-dot"></span>
-                            All financial data is stored exclusively on this device
-                        </div>
-                        <div class="sec-item">
-                            <span class="sec-dot"></span>
-                            No external servers, APIs, or cloud sync of any kind
-                        </div>
-                        <div class="sec-item">
-                            <span class="sec-dot"></span>
-                            PIN-protected Guardian Sentry on every session
-                        </div>
-                        <div class="sec-item">
-                            <span class="sec-dot"></span>
-                            Zero telemetry — no analytics or usage tracking
-                        </div>
-                        <div class="sec-item">
-                            <span class="sec-dot"></span>
-                            Data lives in localStorage — clears only on explicit export or reset
+                <!-- ─── CARD 1 · VITALS ─────────────────── -->
+                <div id="balance-card" class="dash-card glass-card vitals-card">
+                    <div class="glass-card-header">
+                        <span class="glass-card-icon">&#9675;</span>
+                        VITALS &nbsp;// LIQUIDITY ENGINE
+                    </div>
+
+                    <div class="gauge-container">
+                        <svg viewBox="0 0 100 50" class="gauge">
+                            <path class="gauge-track" d="M10 45 A 40 40 0 0 1 90 45" />
+                            <path id="gauge-fill" class="gauge-path" d="M10 45 A 40 40 0 0 1 90 45" />
+                        </svg>
+                        <div class="bal-display">
+                            <span class="currency">KES</span>
+                            <span id="bal-amount" class="blurred">0.00</span>
                         </div>
                     </div>
-                    <div class="sec-badge">🔒 LOCAL-ONLY // NO NETWORK CALLS</div>
+
+                    <button id="toggle-privacy" class="reveal-btn" onclick="openSecureModal()">REVEAL DATA</button>
+
+                    <div class="vitals-stats-row">
+                        <div class="vstat">
+                            <div class="vstat-label">XP</div>
+                            <div id="xp-display" class="vstat-val neon-text">0</div>
+                        </div>
+                        <div class="vstat-divider"></div>
+                        <div class="vstat">
+                            <div class="vstat-label">BURN/HR</div>
+                            <div id="burn-rate" class="vstat-val">0.00</div>
+                        </div>
+                        <div class="vstat-divider"></div>
+                        <div class="vstat">
+                            <div class="vstat-label">ETA</div>
+                            <div id="days-left" class="vstat-val neon-text">--</div>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- CARD 2: BUDGET CONTROL FUNCTION -->
-                <div class="dash-card glass-card">
-                    <div class="dash-card-icon">◈</div>
-                    <div class="dash-card-header">BUDGET CONTROL FUNCTION</div>
-                    <div class="budget-displays">
-                        <span id="budget-spend-display" class="neon-text">KES 0.00</span>
-                        <span id="budget-target-display" class="dim-text">TARGET: NOT SET</span>
+                <!-- ─── CARD 2 · SENTRY CONTROL ─────────── -->
+                <div class="dash-card glass-card sentry-card">
+                    <div class="glass-card-header">
+                        <span class="glass-card-icon">&#11041;</span>
+                        SENTRY CONTROL &nbsp;// BUDGET
                     </div>
-                    <div class="budget-bar-wrap">
-                        <div id="budget-progress-bar" class="budget-bar-fill"></div>
+
+                    <div class="budget-readout">
+                        <div class="budget-col">
+                            <div class="budget-col-label">DEPLOYED THIS WEEK</div>
+                            <div id="budget-spend-display" class="budget-big neon-text">KES 0.00</div>
+                        </div>
+                        <div class="budget-col budget-col-right">
+                            <div class="budget-col-label">WEEKLY TARGET</div>
+                            <div id="budget-target-display" class="budget-target dim-text">NOT SET</div>
+                        </div>
                     </div>
-                    <div class="budget-pct-row">
-                        <span class="dim-text" style="font-size:0.65rem;">WEEKLY SPEND</span>
+
+                    <div class="budget-track-wrap">
+                        <div id="budget-progress-bar" class="budget-track-fill"></div>
+                    </div>
+                    <div class="budget-meta-row">
+                        <span class="dim-text" style="font-size:0.62rem; letter-spacing:1px;">WEEKLY BURN</span>
                         <span id="budget-pct-display" class="budget-pct">--%</span>
                     </div>
+
+                    <div class="diag-divider"></div>
+
+                    <div class="diag-label">WEEKLY DIAGNOSTIC</div>
+                    <div id="weekly-report-content" class="weekly-diag">
+                        <p class="dim-text">Awaiting data...</p>
+                    </div>
+
                     <div class="budget-input-row">
-                        <input type="number" id="weekly-target-input" class="dash-input" placeholder="Set weekly target (KES)...">
-                        <button class="dash-set-btn" onclick="setWeeklyTarget()">SET</button>
+                        <input type="number" id="weekly-target-input" class="dash-input" placeholder="Set weekly budget (KES)...">
+                        <button class="dash-set-btn" onclick="setWeeklyTarget()">ARM</button>
                     </div>
                 </div>
 
-                <!-- CARD 3: MODULE NAVIGATION -->
-                <div class="dash-card glass-card">
-                    <div class="dash-card-icon">⊞</div>
-                    <div class="dash-card-header">MODULE ACCESS</div>
-                    <div class="module-launcher-grid">
+                <!-- ─── CARD 3 · SECURITY STATUS ─────────── -->
+                <div class="dash-card glass-card security-card">
+                    <div class="glass-card-header">
+                        <span class="glass-card-icon">&#11042;</span>
+                        SECURITY &nbsp;// ZERO-CLOUD
+                    </div>
+
+                    <div class="sec-checks">
+                        <div class="sec-row"><span class="sec-dot"></span><span>All data stored exclusively on-device</span></div>
+                        <div class="sec-row"><span class="sec-dot"></span><span>No cloud sync &bull; No external APIs</span></div>
+                        <div class="sec-row"><span class="sec-dot"></span><span>PIN-gated Guardian Sentry active</span></div>
+                        <div class="sec-row"><span class="sec-dot"></span><span>Zero telemetry &bull; No analytics</span></div>
+                    </div>
+
+                    <div id="privacy-status-indicator" class="privacy-badge">
+                        &#128274;&nbsp; PRIVATE MODE: ACTIVE
+                    </div>
+
+                    <div class="tmap-label">TACTICAL MAP</div>
+                    <div class="launcher-grid">
                         <button class="launcher-btn" onclick="launchModule('ingest')">
-                            <span class="launcher-icon">⚡</span>
-                            <span class="launcher-label">SHREDDER</span>
-                            <span class="launcher-sub">SMS PARSER</span>
+                            <span class="launcher-ico">&#9889;</span>
+                            <span class="launcher-name">SHREDDER</span>
+                            <span class="launcher-desc">SMS PARSER</span>
+                            <span class="launcher-arrow">&#8250;</span>
                         </button>
                         <button class="launcher-btn" onclick="launchModule('ledger')">
-                            <span class="launcher-icon">◈</span>
-                            <span class="launcher-label">VAULT</span>
-                            <span class="launcher-sub">MANUAL LOG</span>
+                            <span class="launcher-ico">&#9672;</span>
+                            <span class="launcher-name">VAULT</span>
+                            <span class="launcher-desc">MANUAL LOG</span>
+                            <span class="launcher-arrow">&#8250;</span>
                         </button>
                         <button class="launcher-btn" onclick="launchModule('viz')">
-                            <span class="launcher-icon">⬡</span>
-                            <span class="launcher-label">VORTEX</span>
-                            <span class="launcher-sub">ANALYTICS</span>
+                            <span class="launcher-ico">&#9711;</span>
+                            <span class="launcher-name">VORTEX</span>
+                            <span class="launcher-desc">ANALYTICS</span>
+                            <span class="launcher-arrow">&#8250;</span>
                         </button>
                     </div>
                 </div>
 
-            </div>
-        </div>
-        <!-- END DASHBOARD VIEW -->
+            </div><!-- /.dash-grid -->
+        </div><!-- /#dashboard-view -->
 
         <!-- ============================================
-             EXISTING MODULES — now wrapped in #modules-view
-             Hidden until a module is launched from the Dashboard
-             ============================================ -->
+             MODULES VIEW — existing modules, no vitals-col
+        ============================================ -->
         <div id="modules-view" style="display:none;">
-            <main class="grid-container">
-                <aside class="vitals-col">
-                    <section id="balance-card" class="card">
-                        <header>LIQUIDITY ENGINE</header>
-                        <div class="gauge-container">
-                            <svg viewBox="0 0 100 50" class="gauge">
-                                <path class="gauge-track" d="M10 45 A 40 40 0 0 1 90 45" />
-                                <path id="gauge-fill" class="gauge-path" d="M10 45 A 40 40 0 0 1 90 45" />
-                            </svg>
-                            <div class="bal-display">
-                                <span class="currency">KES</span>
-                                <span id="bal-amount" class="blurred">0.00</span>
-                            </div>
+            <div class="modules-only-container">
+                <nav class="module-nav">
+                    <button onclick="goToDashboard()" class="nav-btn back-dash-btn">&#8592; HQ</button>
+                    <button onclick="showModule('ingest')" id="nav-ingest" class="nav-btn active">SHREDDER</button>
+                    <button onclick="showModule('ledger')" id="nav-ledger" class="nav-btn">VAULT</button>
+                    <button onclick="showModule('viz')" id="nav-viz" class="nav-btn">VORTEX</button>
+                </nav>
+
+                <!-- MOD: SHREDDER — UNCHANGED -->
+                <div id="mod-ingest" class="module-content">
+                    <div class="ingestor-header"><h3>M-PESA SHREDDER</h3></div>
+                    <div class="textarea-wrapper">
+                        <textarea id="sms-area" placeholder="Paste full M-PESA SMS text here..."></textarea>
+                        <div class="scanner-line"></div>
+                    </div>
+                    <button class="action-btn" onclick="shredSMS()">INITIALIZE SYNC</button>
+
+                    <div class="collapsible-ledger">
+                        <div class="ledger-controls">
+                            <button id="btn-inbound" class="ledger-toggle-btn" onclick="toggleLedger('inbound')">
+                                <span class="ledger-btn-icon">&#9654;</span>
+                                <span>INBOUND <span class="ledger-sub">(RECEIPTS)</span></span>
+                            </button>
+                            <button id="btn-outbound" class="ledger-toggle-btn" onclick="toggleLedger('outbound')">
+                                <span class="ledger-btn-icon">&#9654;</span>
+                                <span>OUTBOUND <span class="ledger-sub">(TRADES)</span></span>
+                            </button>
                         </div>
-                        <button id="toggle-privacy" class="reveal-btn" onclick="openSecureModal()">REVEAL DATA</button>
-                    </section>
-
-                    <section class="card">
-                        <header>ENGINEERING ANALYTICS</header>
-                        <div class="stat-row">XP: <span id="xp-display" class="neon-text">0</span></div>
-                        <div class="stat-row">BURN: <span id="burn-rate">0.00</span>/hr</div>
-                        <div class="stat-row">ETA: <span id="days-left" class="neon-text">--</span> DAYS</div>
-                    </section>
-
-                    <section class="card report-card">
-                        <header>WEEKLY DIAGNOSTIC</header>
-                        <div id="weekly-report-content">
-                            <p class="dim-text">Awaiting data...</p>
+                        <div id="panel-inbound" class="ledger-panel" style="display:none;">
+                            <div class="ledger-panel-header">INBOUND (RECEIPTS)</div>
+                            <div id="inbound-list" class="mini-ledger"></div>
                         </div>
-                    </section>
-                </aside>
-
-                <section class="modules-col">
-                    <nav class="module-nav">
-                        <button onclick="goToDashboard()" class="nav-btn back-dash-btn">← HQ</button>
-                        <button onclick="showModule('ingest')" class="nav-btn active">SHREDDER</button>
-                        <button onclick="showModule('ledger')" class="nav-btn">VAULT</button>
-                        <button onclick="showModule('viz')" class="nav-btn">VORTEX</button>
-                    </nav>
-
-                    <div id="mod-ingest" class="module-content">
-                        <div class="ingestor-header"><h3>M-PESA SHREDDER</h3></div>
-                        <div class="textarea-wrapper">
-                            <textarea id="sms-area" placeholder="Paste full text here..."></textarea>
-                            <div class="scanner-line"></div>
-                        </div>
-                        <button class="action-btn" onclick="shredSMS()">INITIALIZE SYNC</button>
-
-                        <!-- COLLAPSIBLE LEDGER SYSTEM — UNCHANGED -->
-                        <div class="collapsible-ledger">
-                            <div class="ledger-controls">
-                                <button id="btn-inbound" class="ledger-toggle-btn" onclick="toggleLedger('inbound')">
-                                    <span class="ledger-btn-icon">▶</span>
-                                    <span>INBOUND <span class="ledger-sub">(RECEIPTS)</span></span>
-                                </button>
-                                <button id="btn-outbound" class="ledger-toggle-btn" onclick="toggleLedger('outbound')">
-                                    <span class="ledger-btn-icon">▶</span>
-                                    <span>OUTBOUND <span class="ledger-sub">(TRADES)</span></span>
-                                </button>
-                            </div>
-
-                            <div id="panel-inbound" class="ledger-panel" style="display:none;">
-                                <div class="ledger-panel-header">INBOUND (RECEIPTS)</div>
-                                <div id="inbound-list" class="mini-ledger"></div>
-                            </div>
-
-                            <div id="panel-outbound" class="ledger-panel" style="display:none;">
-                                <div class="ledger-panel-header">OUTBOUND (TRADES)</div>
-                                <div id="outbound-list" class="mini-ledger"></div>
-                            </div>
+                        <div id="panel-outbound" class="ledger-panel" style="display:none;">
+                            <div class="ledger-panel-header">OUTBOUND (TRADES)</div>
+                            <div id="outbound-list" class="mini-ledger"></div>
                         </div>
                     </div>
+                </div>
 
-                    <div id="mod-ledger" class="module-content" style="display:none;">
-                        <h3>MANUAL VAULT</h3>
-                        <div class="entry-form">
-                            <input type="text" id="item-name" placeholder="Item Label">
-                            <input type="number" id="item-cost" placeholder="KES">
-                            <select id="item-category">
-                                <option value="Food">Food</option>
-                                <option value="Transport">Transport</option>
-                                <option value="Academic">Academic</option>
-                                <option value="Utility">Utility</option>
-                            </select>
-                            <button class="action-btn" onclick="addManualEntry()">LOG ENTRY</button>
-                        </div>
-                        <hr style="border:0; border-top:1px solid var(--border); margin:20px 0;">
-                        <div class="export-zone">
-                            <header style="border:0; font-size:0.6rem; color:var(--mech-blue);">DATA PERSISTENCE</header>
-                            <button class="action-btn btn-alt" onclick="exportBlueprint()">EXPORT LOG (.TXT)</button>
-                        </div>
+                <!-- MOD: VAULT — UNCHANGED -->
+                <div id="mod-ledger" class="module-content" style="display:none;">
+                    <h3>MANUAL VAULT</h3>
+                    <div class="entry-form">
+                        <input type="text" id="item-name" placeholder="Item Label">
+                        <input type="number" id="item-cost" placeholder="KES">
+                        <select id="item-category">
+                            <option value="Food">Food</option>
+                            <option value="Transport">Transport</option>
+                            <option value="Academic">Academic</option>
+                            <option value="Utility">Utility</option>
+                        </select>
+                        <button class="action-btn" onclick="addManualEntry()">LOG ENTRY</button>
                     </div>
+                    <hr style="border:0; border-top:1px solid var(--border); margin:20px 0;">
+                    <div class="export-zone">
+                        <header style="border:0; font-size:0.6rem; color:var(--mech-blue);">DATA PERSISTENCE</header>
+                        <button class="action-btn btn-alt" onclick="exportBlueprint()">EXPORT LOG (.TXT)</button>
+                    </div>
+                </div>
 
-                    <div id="mod-viz" class="module-content" style="display:none;">
-                        <h3>VORTEX TRENDS</h3>
-                        <canvas id="fluxChart"></canvas>
-                    </div>
-                </section>
-            </main>
+                <!-- MOD: VORTEX — UNCHANGED -->
+                <div id="mod-viz" class="module-content" style="display:none;">
+                    <h3>VORTEX TRENDS</h3>
+                    <canvas id="fluxChart"></canvas>
+                </div>
+            </div>
+        </div><!-- /#modules-view -->
+
+    </div><!-- /.dashboard-wrapper -->
+
+    <!-- ============================================
+         ADVISOR INTERFACE — Ghost Sidebar / Bottom Sheet
+    ============================================ -->
+    <div id="advisor-backdrop" class="advisor-backdrop" onclick="toggleAdvisor()"></div>
+
+    <aside id="advisor-panel" class="advisor-panel">
+        <div class="advisor-hdr">
+            <div>
+                <div class="advisor-title">APEX ADVISOR</div>
+                <div class="advisor-subtitle">TACTICAL AI &nbsp;// LOCAL CONTEXT</div>
+            </div>
+            <button class="advisor-close" onclick="toggleAdvisor()">&#10005;</button>
         </div>
-        <!-- END MODULES VIEW -->
 
-    </div>
-    <!-- END APP SHELL -->
+        <!-- Setup Screen — shown when no API key -->
+        <div id="advisor-setup" class="advisor-setup">
+            <div class="setup-sigil">&#11041;</div>
+            <p class="setup-text">Arm the Advisor with an Anthropic API key. It lives in localStorage — never leaves this device.</p>
+            <div class="setup-row">
+                <input type="password" id="api-key-input" class="dash-input" placeholder="sk-ant-api03-...">
+                <button class="dash-set-btn" onclick="setApiKey()">ARM</button>
+            </div>
+            <p class="setup-hint">Get yours at console.anthropic.com</p>
+        </div>
+
+        <!-- Chat Interface — shown when key exists -->
+        <div id="advisor-chat" class="advisor-chat" style="display:none;">
+            <div id="advisor-messages" class="advisor-messages"></div>
+            <div class="advisor-compose">
+                <input
+                    type="text"
+                    id="advisor-input"
+                    class="advisor-text-input"
+                    placeholder="Query the Advisor..."
+                    onkeydown="if(event.key==='Enter')sendAdvisorMessage()"
+                >
+                <button class="advisor-send-btn" onclick="sendAdvisorMessage()">&#8593;</button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Floating Advisor Button -->
+    <button id="advisor-fab" class="advisor-fab" onclick="toggleAdvisor()" title="APEX Advisor">
+        A
+    </button>
 
     <script src="main.js"></script>
     <script src="scrpits/flux-gamify.js"></script>
