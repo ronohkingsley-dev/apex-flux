@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>APEX // FLUX V7.0</title>
+    <title>APEX // FLUX V8.0</title>
     <link rel="icon" type="image/png" href="flux-icon.png?v=99">
     <link rel="apple-touch-icon" href="flux-icon.png?v=99">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;700&display=swap" rel="stylesheet">
@@ -13,97 +13,107 @@
 <body class="apex-theme">
 
 <!-- ================================================================
-     PHASE 1 — GLASSMORPHISM LANDING (Entry Point)
-     Visible on first load. Hidden once INITIALIZE SYSTEM is clicked.
+     FIRST-RUN PIN SETUP — shown if no PIN exists in localStorage
+================================================================ -->
+<div id="pin-setup-overlay" class="overlay" style="display:none;">
+    <div class="auth-card">
+        <div class="auth-header">
+            <h1 class="brand-auth">APEX <span class="flux-span">FLUX</span></h1>
+            <p class="sentry-tag" id="setup-step-label">INITIALIZE GUARDIAN SENTRY</p>
+        </div>
+        <p class="setup-step-hint" id="setup-hint-text">CREATE YOUR 4-DIGIT ACCESS CODE</p>
+        <div class="pin-box">
+            <input type="password" id="setup-pin-display" placeholder="****" readonly>
+        </div>
+        <div class="numpad">
+            <button onclick="setupInputPin(1)">1</button>
+            <button onclick="setupInputPin(2)">2</button>
+            <button onclick="setupInputPin(3)">3</button>
+            <button onclick="setupInputPin(4)">4</button>
+            <button onclick="setupInputPin(5)">5</button>
+            <button onclick="setupInputPin(6)">6</button>
+            <button onclick="setupInputPin(7)">7</button>
+            <button onclick="setupInputPin(8)">8</button>
+            <button onclick="setupInputPin(9)">9</button>
+            <button onclick="setupClearPin()" class="btn-alt">C</button>
+            <button onclick="setupInputPin(0)">0</button>
+            <button onclick="setupConfirmPin()" class="btn-primary">&#10152;</button>
+        </div>
+    </div>
+</div>
+
+<!-- ================================================================
+     VIEWPORT 1 — GLASSMORPHISM LANDING
 ================================================================ -->
 <div id="landing-view">
-
-    <!-- Ambient grid overlay -->
-    <div class="landing-grid-bg"></div>
-
-    <!-- Top bar -->
     <div class="landing-topbar">
         <span class="landing-brand">APEX <span class="flux-span">// FLUX</span></span>
-        <span class="landing-version">V7.0 // MMUST EDITION</span>
+        <span class="landing-version">V8.0 // MMUST EDITION</span>
     </div>
 
-    <!-- Hero -->
     <div class="landing-hero">
         <div class="landing-sigil">◈</div>
         <h1 class="landing-title">TACTICAL FINANCIAL<br><span class="flux-span">INTELLIGENCE</span></h1>
         <p class="landing-subtitle">Engineering-grade expense management for MMUST students</p>
     </div>
 
-    <!-- Three About Cards -->
     <div class="landing-cards">
 
-        <!-- Card 1: Mission -->
         <div class="landing-card glass-card">
-            <div class="lcard-icon-wrap">
-                <span class="lcard-icon">⬡</span>
-            </div>
+            <div class="lcard-icon-wrap"><span class="lcard-icon">⬡</span></div>
             <div class="lcard-tag">DIRECTIVE 01</div>
             <h3 class="lcard-title">THE MISSION</h3>
             <p class="lcard-body">
-                Tactical expense tracking built specifically for MMUST Engineering students.
-                APEX FLUX cuts through financial noise — parse M-PESA transactions, monitor burn rate,
-                and maintain engineering-level discipline over every KES in your account.
-                Designed for the realities of campus life: fare, supper, printing, and everything in between.
+                Tactical expense tracking built for <strong>MMUST Engineering students</strong>.
+                APEX FLUX parses M-PESA &amp; Airtel Money transactions, monitors burn rate, and maintains
+                engineering-level discipline over every KES. Designed for the realities of campus life:
+                fare, supper, printing, and everything in between.
             </p>
         </div>
 
-        <!-- Card 2: Operations -->
         <div class="landing-card glass-card">
-            <div class="lcard-icon-wrap">
-                <span class="lcard-icon">◉</span>
-            </div>
+            <div class="lcard-icon-wrap"><span class="lcard-icon">◉</span></div>
             <div class="lcard-tag">DIRECTIVE 02</div>
             <h3 class="lcard-title">OPERATIONS</h3>
             <p class="lcard-body">
                 The XP system drives progression from <strong>CAD INTERN</strong> to <strong>INDUSTRIAL MAGNATE</strong>.
-                Every KES logged and every week under budget earns XP. The <em>7-Day Vortex Cycle</em> resets weekly —
-                your ledger archives and an Efficiency Grade (A–D) is calculated based on budget adherence.
-                Tiers unlock as XP accumulates: Intern → Technician → Plant Engineer → COO → Magnate.
+                The <em>7-Day Vortex Cycle</em> resets weekly — your ledger archives and an
+                <em>Efficiency Grade (A–D)</em> is calculated. Tiers: Intern → Technician →
+                Plant Engineer → COO → Magnate. Debt tracking (Fuliza/Okoa) runs live.
             </p>
         </div>
 
-        <!-- Card 3: Data Sovereignty -->
         <div class="landing-card glass-card">
-            <div class="lcard-icon-wrap">
-                <span class="lcard-icon">⬢</span>
-            </div>
+            <div class="lcard-icon-wrap"><span class="lcard-icon">⬢</span></div>
             <div class="lcard-tag">DIRECTIVE 03</div>
             <h3 class="lcard-title">DATA SOVEREIGNTY</h3>
             <p class="lcard-body">
                 <strong>Zero cloud. Zero tracking. Zero servers.</strong>
-                All financial data — balances, transactions, XP, history — is stored exclusively in your
-                browser's <code>localStorage</code>. Nothing is transmitted to any external server, API, or
-                third party. Your financial intelligence belongs to you alone.
-                The Advisor runs entirely on local logic. No keys. No accounts. No leaks.
+                All data lives exclusively in your browser's <code>localStorage</code>.
+                The Advisor runs on local rule logic — no API keys, no accounts.
+                <strong>Ghost Mode</strong> auto-blurs all figures when the tab is idle or inactive.
+                Your financial intelligence belongs to you alone.
             </p>
         </div>
 
-    </div><!-- /.landing-cards -->
-
-    <!-- CTA -->
-    <div class="landing-cta-wrap">
-        <button class="landing-cta-btn" onclick="initializeSystem()">
-            <span class="cta-icon">⚡</span>
-            INITIALIZE SYSTEM
-        </button>
-        <p class="landing-cta-hint">PIN authentication required &nbsp;// &nbsp;Default: 1234</p>
     </div>
 
-    <!-- Footer line -->
+    <div class="landing-cta-wrap">
+        <button class="landing-cta-btn" onclick="initializeSystem()">
+            <span class="cta-icon">&#9889;</span>
+            INITIALIZE SYSTEM
+        </button>
+        <p class="landing-cta-hint">PIN authentication required &nbsp;//&nbsp; Ghost Mode active</p>
+    </div>
+
     <div class="landing-footer">
         APEX // FLUX &nbsp;·&nbsp; MMUST ENGINEERING &nbsp;·&nbsp; LOCAL-ONLY &nbsp;·&nbsp; ZERO CLOUD
     </div>
-
-</div><!-- /#landing-view -->
+</div>
 
 
 <!-- ================================================================
-     GUARDIAN SENTRY — hidden until INITIALIZE SYSTEM is pressed
+     GUARDIAN SENTRY — login (hidden until INITIALIZE is clicked)
 ================================================================ -->
 <div id="guardian-overlay" class="overlay" style="display:none;">
     <div class="auth-card">
@@ -156,17 +166,11 @@
             <span class="commodity-hdr-tag">STEP 2 // CLASSIFY</span>
             <div class="commodity-title">IDENTIFY COMMODITY TYPE</div>
         </div>
-        <p class="commodity-hint">
-            Specify the commodity type for accurate Advisor analysis.<br>
-            Examples: <em>Supper, Printing, Fare, Rent, Data, Snack, Books</em>
-        </p>
-        <input
-            type="text"
-            id="commodity-input"
-            class="dash-input"
+        <p class="commodity-hint">Specify type for Advisor analysis.<br>
+            Examples: <em>Supper, Printing, Fare, Rent, Data, Snack, Books</em></p>
+        <input type="text" id="commodity-input" class="dash-input"
             placeholder="e.g., Supper"
-            onkeydown="if(event.key==='Enter')confirmManualEntry()"
-        >
+            onkeydown="if(event.key==='Enter')confirmManualEntry()">
         <div class="commodity-suggestions">
             <span onclick="setCommodity('Supper')">Supper</span>
             <span onclick="setCommodity('Fare')">Fare</span>
@@ -178,6 +182,29 @@
         <div class="commodity-actions">
             <button class="compact-btn compact-btn-cancel" onclick="closeCommodityModal()">CANCEL</button>
             <button class="dash-set-btn" onclick="confirmManualEntry()">LOG ENTRY</button>
+        </div>
+    </div>
+</div>
+
+
+<!-- ================================================================
+     FREQUENT ROUTE NAMING MODAL
+================================================================ -->
+<div id="route-modal" class="modal-overlay" style="display:none;">
+    <div class="commodity-card glass-card">
+        <div class="commodity-hdr">
+            <span class="commodity-hdr-tag">PATTERN DETECTED // P2P</span>
+            <div class="commodity-title">FREQUENT ROUTE IDENTIFIED</div>
+        </div>
+        <p class="commodity-hint" id="route-modal-body">
+            This contact appears frequently. Assign a route label for cleaner tracking.
+        </p>
+        <input type="text" id="route-label-input" class="dash-input"
+            placeholder="e.g., RENT LANDLORD, LUNCH MONEY"
+            onkeydown="if(event.key==='Enter')confirmRouteLabel()">
+        <div class="commodity-actions">
+            <button class="compact-btn compact-btn-cancel" onclick="skipRouteLabel()">SKIP</button>
+            <button class="dash-set-btn" onclick="confirmRouteLabel()">ASSIGN</button>
         </div>
     </div>
 </div>
@@ -198,18 +225,22 @@
 
 
 <!-- ================================================================
-     APP SHELL — hidden until Sentry is passed
+     VIEWPORT 2 — TACTICAL ENGINE (App Shell)
 ================================================================ -->
 <div class="dashboard-wrapper" style="display:none;">
 
-    <!-- SHARED HUD HEADER -->
     <header class="main-hud">
         <div class="brand">APEX <span class="flux-span">// FLUX</span></div>
-        <div class="sys-status">
-            <span class="status-pip"></span>
-            <span id="sys-msg">OPTIMAL</span>
-            &nbsp;//&nbsp;
-            <span id="tier-name" class="neon-text">CAD INTERN</span>
+        <div class="hud-right">
+            <div class="ghost-mode-badge" id="ghost-badge" style="display:none;">
+                &#128065; GHOST MODE
+            </div>
+            <div class="sys-status">
+                <span class="status-pip"></span>
+                <span id="sys-msg">OPTIMAL</span>
+                &nbsp;//&nbsp;
+                <span id="tier-name" class="neon-text">CAD INTERN</span>
+            </div>
         </div>
     </header>
 
@@ -217,21 +248,43 @@
     <div id="dashboard-view">
         <div class="dash-grid">
 
-            <!-- CARD 1 · VITALS // LIQUIDITY ENGINE -->
+            <!-- CARD 1 · VITALS // LIQUIDITY + DEBT -->
             <div id="balance-card" class="dash-card glass-card vitals-card">
                 <div class="glass-card-header">
                     <span class="glass-card-icon">&#9675;</span>
                     VITALS &nbsp;// LIQUIDITY ENGINE
                 </div>
 
-                <div class="gauge-container">
-                    <svg viewBox="0 0 100 50" class="gauge">
-                        <path class="gauge-track" d="M10 45 A 40 40 0 0 1 90 45" />
-                        <path id="gauge-fill" class="gauge-path" d="M10 45 A 40 40 0 0 1 90 45" />
-                    </svg>
-                    <div class="bal-display">
-                        <span class="currency">KES</span>
-                        <span id="bal-amount" class="blurred">0.00</span>
+                <!-- FUEL GAUGE (green) -->
+                <div class="gauge-block">
+                    <div class="gauge-label-row">
+                        <span class="gauge-lbl">FUEL</span>
+                        <span class="gauge-lbl-right neon-text">BUDGET</span>
+                    </div>
+                    <div class="gauge-container">
+                        <svg viewBox="0 0 100 50" class="gauge">
+                            <path class="gauge-track" d="M10 45 A 40 40 0 0 1 90 45"/>
+                            <path id="gauge-fill" class="gauge-path gauge-green" d="M10 45 A 40 40 0 0 1 90 45"/>
+                        </svg>
+                        <div class="bal-display">
+                            <span class="currency">KES</span>
+                            <span id="bal-amount" class="blurred financial-figure">0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DEBT GAUGE (red) -->
+                <div class="debt-gauge-block">
+                    <div class="gauge-label-row">
+                        <span class="gauge-lbl debt-lbl">LIABILITY</span>
+                        <span class="gauge-lbl-right" id="liability-display" class="financial-figure">KES 0.00</span>
+                    </div>
+                    <div class="debt-bar-track">
+                        <div id="debt-bar-fill" class="debt-bar-fill"></div>
+                    </div>
+                    <div class="debt-meta-row">
+                        <span class="dim-text" style="font-size:0.6rem;">FULIZA / OKOA DEBT</span>
+                        <span id="debt-pct-display" class="debt-pct">0%</span>
                     </div>
                 </div>
 
@@ -240,17 +293,17 @@
                 <div class="vitals-stats-row">
                     <div class="vstat">
                         <div class="vstat-label">XP</div>
-                        <div id="xp-display" class="vstat-val neon-text">0</div>
+                        <div id="xp-display" class="vstat-val neon-text financial-figure">0</div>
                     </div>
                     <div class="vstat-divider"></div>
                     <div class="vstat">
                         <div class="vstat-label">BURN/HR</div>
-                        <div id="burn-rate" class="vstat-val">0.00</div>
+                        <div id="burn-rate" class="vstat-val financial-figure">0.00</div>
                     </div>
                     <div class="vstat-divider"></div>
                     <div class="vstat">
                         <div class="vstat-label">ETA</div>
-                        <div id="days-left" class="vstat-val neon-text">--</div>
+                        <div id="days-left" class="vstat-val neon-text financial-figure">--</div>
                     </div>
                 </div>
             </div>
@@ -265,11 +318,11 @@
                 <div class="budget-readout">
                     <div class="budget-col">
                         <div class="budget-col-label">DEPLOYED THIS WEEK</div>
-                        <div id="budget-spend-display" class="budget-big neon-text">KES 0.00</div>
+                        <div id="budget-spend-display" class="budget-big neon-text financial-figure">KES 0.00</div>
                     </div>
                     <div class="budget-col budget-col-right">
                         <div class="budget-col-label">WEEKLY TARGET</div>
-                        <div id="budget-target-display" class="budget-target dim-text">NOT SET</div>
+                        <div id="budget-target-display" class="budget-target dim-text financial-figure">NOT SET</div>
                     </div>
                 </div>
 
@@ -278,7 +331,7 @@
                 </div>
                 <div class="budget-meta-row">
                     <span class="dim-text" style="font-size:0.62rem; letter-spacing:1px;">WEEKLY BURN</span>
-                    <span id="budget-pct-display" class="budget-pct">--%</span>
+                    <span id="budget-pct-display" class="budget-pct financial-figure">--%</span>
                 </div>
 
                 <div class="diag-divider"></div>
@@ -303,7 +356,7 @@
                 <div class="sec-checks">
                     <div class="sec-row"><span class="sec-dot"></span><span>All data stored exclusively on-device</span></div>
                     <div class="sec-row"><span class="sec-dot"></span><span>No cloud sync &bull; No external APIs</span></div>
-                    <div class="sec-row"><span class="sec-dot"></span><span>PIN-gated Guardian Sentry active</span></div>
+                    <div class="sec-row"><span class="sec-dot"></span><span>Ghost Mode auto-blurs on idle / tab switch</span></div>
                     <div class="sec-row"><span class="sec-dot"></span><span>Zero telemetry &bull; No analytics</span></div>
                 </div>
 
@@ -348,11 +401,15 @@
                 <button onclick="showModule('viz')" id="nav-viz" class="nav-btn">VORTEX</button>
             </nav>
 
-            <!-- MOD: SHREDDER — UNCHANGED -->
+            <!-- MOD: SHREDDER -->
             <div id="mod-ingest" class="module-content">
-                <div class="ingestor-header"><h3>M-PESA SHREDDER</h3></div>
+                <div class="ingestor-header"><h3>M-PESA / AIRTEL SHREDDER</h3></div>
+                <div class="carrier-badges">
+                    <span class="carrier-badge cb-safaricom">SAFARICOM</span>
+                    <span class="carrier-badge cb-airtel">AIRTEL</span>
+                </div>
                 <div class="textarea-wrapper">
-                    <textarea id="sms-area" placeholder="Paste full M-PESA SMS text here..."></textarea>
+                    <textarea id="sms-area" placeholder="Paste full M-PESA or Airtel Money SMS text here..."></textarea>
                     <div class="scanner-line"></div>
                 </div>
                 <button class="action-btn" onclick="shredSMS()">INITIALIZE SYNC</button>
@@ -379,7 +436,7 @@
                 </div>
             </div>
 
-            <!-- MOD: VAULT — with two-step commodity entry -->
+            <!-- MOD: VAULT -->
             <div id="mod-ledger" class="module-content" style="display:none;">
                 <h3>MANUAL VAULT</h3>
                 <div class="entry-form">
@@ -402,16 +459,16 @@
                 </div>
             </div>
 
-            <!-- MOD: VORTEX — 7-day chart with placeholder -->
+            <!-- MOD: VORTEX — 7-day chart -->
             <div id="mod-viz" class="module-content" style="display:none;">
                 <div class="vortex-header">
                     <h3>VORTEX // 7-DAY BURN TRACE</h3>
                     <span class="vortex-cycle-tag" id="vortex-cycle-tag">CYCLE ACTIVE</span>
                 </div>
                 <div id="vortex-placeholder" class="vortex-placeholder" style="display:none;">
-                    <div class="vortex-scan-icon">◉</div>
+                    <div class="vortex-scan-icon">&#9711;</div>
                     <div class="vortex-scan-text">SYSTEM SCANNING</div>
-                    <div class="vortex-scan-sub">No expenditure data for the current cycle.<br>Initialize the Shredder or Vault to populate the Vortex.</div>
+                    <div class="vortex-scan-sub">No expenditure data for current cycle.<br>Initialize Shredder or Vault to populate.</div>
                 </div>
                 <canvas id="fluxChart"></canvas>
             </div>
@@ -422,7 +479,7 @@
 
 
 <!-- ================================================================
-     ADVISOR INTERFACE — Local Rule Engine (No API)
+     LOCAL ADVISOR — Ghost Sidebar / Bottom Sheet
 ================================================================ -->
 <div id="advisor-backdrop" class="advisor-backdrop" onclick="toggleAdvisor()"></div>
 
@@ -434,26 +491,18 @@
         </div>
         <button class="advisor-close" onclick="toggleAdvisor()">&#10005;</button>
     </div>
-
-    <!-- Chat Interface — always ready, no API key needed -->
     <div id="advisor-chat" class="advisor-chat">
         <div id="advisor-messages" class="advisor-messages"></div>
         <div class="advisor-compose">
-            <input
-                type="text"
-                id="advisor-input"
-                class="advisor-text-input"
+            <input type="text" id="advisor-input" class="advisor-text-input"
                 placeholder="Query the Advisor..."
-                onkeydown="if(event.key==='Enter')sendAdvisorMessage()"
-            >
+                onkeydown="if(event.key==='Enter')sendAdvisorMessage()">
             <button class="advisor-send-btn" onclick="sendAdvisorMessage()">&#8593;</button>
         </div>
     </div>
 </aside>
 
-<!-- Floating Advisor Button -->
 <button id="advisor-fab" class="advisor-fab" onclick="toggleAdvisor()" title="Local Advisor">A</button>
-
 
 <script src="main.js"></script>
 <script src="scrpits/flux-gamify.js"></script>
