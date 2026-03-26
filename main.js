@@ -1,5 +1,5 @@
 // ================================================================
-//  APEX // FLUX v6.0 — TACTICAL ADVISOR EDITION
+//  APEX // FLUX v7.0 — TACTICAL INTELLIGENCE ENGINE
 //  main.js
 // ================================================================
 
@@ -12,26 +12,41 @@ const STATE = {
     weekStartDate: localStorage.getItem('flux_week_start')               || new Date().toISOString(),
     weeklyTarget:  parseFloat(localStorage.getItem('flux_weekly_target'))|| 0,
     apexHistory:   JSON.parse(localStorage.getItem('apex_history'))      || [],
-    apiKey:        localStorage.getItem('flux_api_key')                  || '',
+    lastReset:     parseInt(localStorage.getItem('flux_last_reset'))     || Date.now(),
     isPrivate:     true,
     pin:           "1234"
 };
 
+// Pending manual entry temp storage
+let _pendingEntry = null;
+// Chart instance
 let fluxChart = null;
+// Advisor state
+let advisorGreeted = false;
 
 document.addEventListener('DOMContentLoaded', () => {
-    syncUI();
-    // Chart is lazy-initialized when Vortex module is opened
+    // Do not call syncUI on load — dashboard is hidden until PIN is entered.
+    // syncUI will be called inside verifyPin().
 });
+
+
+// ================================================================
+//  PHASE 1 — LANDING
+// ================================================================
+function initializeSystem() {
+    document.getElementById('landing-view').style.display = 'none';
+    const overlay = document.getElementById('guardian-overlay');
+    overlay.style.display = 'flex';
+}
 
 
 // ================================================================
 //  1. EFFICIENCY ENGINE — UNCHANGED
 // ================================================================
 function runEfficiencyDiagnostic() {
-    const now        = new Date();
-    const startDate  = new Date(STATE.weekStartDate);
-    const diffDays   = Math.floor((now - startDate) / (1000 * 60 * 60 * 24));
+    const now       = new Date();
+    const startDate = new Date(STATE.weekStartDate);
+    const diffDays  = Math.floor((now - startDate) / (1000 * 60 * 60 * 24));
 
     const todayStr   = new Date().toLocaleDateString();
     const todaySpend = STATE.outbound
@@ -49,14 +64,12 @@ function runEfficiencyDiagnostic() {
 
         if (currentWeekSpend < STATE.lastWeekSpend || STATE.lastWeekSpend === 0) {
             STATE.xp += 100;
-            alert("ENGINE OPTIMIZED: Spending was lower than last week. +100 XP");
         } else {
             STATE.xp = Math.max(0, STATE.xp - 50);
-            alert("SYSTEM LEAK: Spending exceeded last week. -50 XP");
         }
 
-        STATE.lastWeekSpend   = currentWeekSpend;
-        STATE.weekStartDate   = new Date().toISOString();
+        STATE.lastWeekSpend = currentWeekSpend;
+        STATE.weekStartDate = new Date().toISOString();
         localStorage.setItem('flux_last_spend', STATE.lastWeekSpend);
         localStorage.setItem('flux_week_start', STATE.weekStartDate);
     }
@@ -77,57 +90,62 @@ function deleteEntry(index) {
 
 
 // ================================================================
-//  3. CORE SYSTEM SYNC
+//  3. CORE SYSTEM SYNC — UNCHANGED logic, safe null checks added
 // ================================================================
 function syncUI() {
     runEfficiencyDiagnostic();
 
-    localStorage.setItem('flux_bal',  STATE.balance);
-    localStorage.setItem('flux_out',  JSON.stringify(STATE.outbound));
-    localStorage.setItem('flux_in',   JSON.stringify(STATE.inbound));
-    localStorage.setItem('flux_xp',   STATE.xp);
+    localStorage.setItem('flux_bal', STATE.balance);
+    localStorage.setItem('flux_out', JSON.stringify(STATE.outbound));
+    localStorage.setItem('flux_in',  JSON.stringify(STATE.inbound));
+    localStorage.setItem('flux_xp',  STATE.xp);
 
     // Balance display
     const balEl   = document.getElementById('bal-amount');
     const privBtn = document.getElementById('toggle-privacy');
-    if (STATE.isPrivate) {
-        balEl.classList.add('blurred');
-        balEl.innerText = "****.**";
-        if (privBtn) privBtn.innerText = "REVEAL DATA";
-    } else {
-        balEl.classList.remove('blurred');
-        balEl.innerText = STATE.balance.toLocaleString(undefined, { minimumFractionDigits: 2 });
-        if (privBtn) privBtn.innerText = "HIDE DATA";
+    if (balEl) {
+        if (STATE.isPrivate) {
+            balEl.classList.add('blurred');
+            balEl.innerText = "****.**";
+            if (privBtn) privBtn.innerText = "REVEAL DATA";
+        } else {
+            balEl.classList.remove('blurred');
+            balEl.innerText = STATE.balance.toLocaleString(undefined, { minimumFractionDigits: 2 });
+            if (privBtn) privBtn.innerText = "HIDE DATA";
+        }
     }
 
-    // Privacy status badge on security card
+    // Privacy status badge
     const privBadge = document.getElementById('privacy-status-indicator');
     if (privBadge) {
         if (STATE.isPrivate) {
-            privBadge.textContent = '\uD83D\uDD12\u00A0 PRIVATE MODE: ACTIVE';
+            privBadge.innerHTML = '&#128274;&nbsp; PRIVATE MODE: ACTIVE';
             privBadge.classList.remove('privacy-exposed');
         } else {
-            privBadge.textContent = '\uD83D\uDD13\u00A0 PRIVATE MODE: OFF';
+            privBadge.innerHTML = '&#128275;&nbsp; PRIVATE MODE: OFF';
             privBadge.classList.add('privacy-exposed');
         }
     }
 
     // XP + tier
-    document.getElementById('xp-display').innerText = STATE.xp;
-    document.getElementById('tier-name').innerText   = getEngTier(STATE.xp);
+    const xpEl   = document.getElementById('xp-display');
+    const tierEl = document.getElementById('tier-name');
+    if (xpEl)   xpEl.innerText   = STATE.xp;
+    if (tierEl) tierEl.innerText = getEngTier(STATE.xp);
 
     // Gauge
     const gaugeFill = document.getElementById('gauge-fill');
     const card      = document.getElementById('balance-card');
-    const offset    = 126 - (Math.min(Math.abs(STATE.balance), 2000) / 2000 * 126);
-    gaugeFill.style.strokeDashoffset = Math.max(0, offset);
-
-    if (STATE.balance <= 0) {
-        gaugeFill.style.stroke = "var(--danger)";
-        card.classList.add('emergency-active');
-    } else {
-        gaugeFill.style.stroke = "var(--neon-green)";
-        card.classList.remove('emergency-active');
+    if (gaugeFill) {
+        const offset = 126 - (Math.min(Math.abs(STATE.balance), 2000) / 2000 * 126);
+        gaugeFill.style.strokeDashoffset = Math.max(0, offset);
+        if (STATE.balance <= 0) {
+            gaugeFill.style.stroke = "var(--danger)";
+            if (card) card.classList.add('emergency-active');
+        } else {
+            gaugeFill.style.stroke = "var(--neon-green)";
+            if (card) card.classList.remove('emergency-active');
+        }
     }
 
     renderLists();
@@ -138,24 +156,23 @@ function syncUI() {
 
 
 // ================================================================
-//  4. DATA NORMALIZATION — NEW v6.0
+//  4. DATA NORMALIZATION — UNCHANGED
 // ================================================================
 function normalizeLabel(name) {
     if (!name) return name;
     const n = name.toUpperCase().trim();
 
     if (n.includes('DATA BUNDLES') || n.includes('DATA BUNDLE') ||
-        n.includes('MPESA DATA')   || n.includes('M-PESA DATA'))    return 'DATA';
-    if (n.includes('TUNUKIWA'))                                       return 'MINS';
-    if (n.includes('POCHI LA BIASHARA') || n.includes('POCHI'))      return 'POCHI';
-    if (n.includes('AIRTIME'))                                        return 'AIRTIME';
-    if (n.includes('FULIZA'))                                         return 'FULIZA';
-    if (n.includes('PAYBILL'))                                        return 'PAYBILL';
-    if (n.includes('BUY GOODS') || n.includes('MERCHANT'))           return 'TILL PMT';
-    if (n.includes('WITHDRAW'))                                       return 'WITHDRAWAL';
-    if (n.includes('OKOA JAHAZI') || n.includes('OKOA'))             return 'EMERGENCY DATA';
+        n.includes('MPESA DATA')   || n.includes('M-PESA DATA'))   return 'DATA';
+    if (n.includes('TUNUKIWA'))                                      return 'MINS';
+    if (n.includes('POCHI LA BIASHARA') || n.includes('POCHI'))     return 'POCHI';
+    if (n.includes('AIRTIME'))                                       return 'AIRTIME';
+    if (n.includes('FULIZA'))                                        return 'FULIZA';
+    if (n.includes('PAYBILL'))                                       return 'PAYBILL';
+    if (n.includes('BUY GOODS') || n.includes('MERCHANT'))          return 'TILL PMT';
+    if (n.includes('WITHDRAW'))                                      return 'WITHDRAWAL';
+    if (n.includes('OKOA JAHAZI') || n.includes('OKOA'))            return 'EMERGENCY DATA';
 
-    // P2P: "TO FIRSTNAME LASTNAME..." → extract first name
     const p2p = name.match(/^(?:TO|sent to)\s+([A-Za-z]+)/i);
     if (p2p) {
         const first = p2p[1];
@@ -167,7 +184,7 @@ function normalizeLabel(name) {
 
 
 // ================================================================
-//  5. SMART SHREDDER — updated to use normalizeLabel
+//  5. SMART SHREDDER — UNCHANGED
 // ================================================================
 function shredSMS() {
     const input    = document.getElementById('sms-area');
@@ -212,14 +229,13 @@ function shredSMS() {
             category = "Transfer";
         }
 
-        // Apply normalization
         label = normalizeLabel(label);
 
         if (diff > 0) {
             STATE.inbound.push({ label, amount: absDiff, timestamp: Date.now() });
             STATE.xp += 10;
         } else if (diff < 0) {
-            STATE.outbound.push({ name: label, cost: absDiff, cat: category, timestamp: Date.now() });
+            STATE.outbound.push({ name: label, cost: absDiff, cat: category, commodityType: label, timestamp: Date.now() });
         }
 
         STATE.balance = newTotal;
@@ -235,12 +251,16 @@ function shredSMS() {
 //  6. RENDER & UI UPDATES — UNCHANGED
 // ================================================================
 function renderLists() {
-    const outboundContainer = document.getElementById('outbound-list');
-    outboundContainer.innerHTML = STATE.outbound.slice(-6).reverse().map((i, idx) => {
+    const outEl = document.getElementById('outbound-list');
+    const inEl  = document.getElementById('inbound-list');
+    if (!outEl || !inEl) return;
+
+    outEl.innerHTML = STATE.outbound.slice(-6).reverse().map((i, idx) => {
         const actualIdx = STATE.outbound.length - 1 - idx;
+        const type = i.commodityType ? `<em style="color:var(--text-dim);font-size:0.7rem;">${i.commodityType}</em>` : `<small>${i.cat}</small>`;
         return `
             <div class="log-entry">
-                <div class="log-info"><b>${i.name}</b><small>${i.cat}</small></div>
+                <div class="log-info"><b>${i.name}</b>${type}</div>
                 <div class="log-actions">
                     <span class="amount-out">-${i.cost.toLocaleString()}</span>
                     <button class="delete-btn" onclick="deleteEntry(${actualIdx})">&#215;</button>
@@ -248,7 +268,7 @@ function renderLists() {
             </div>`;
     }).join('');
 
-    document.getElementById('inbound-list').innerHTML = STATE.inbound.slice(-4).reverse().map(i => `
+    inEl.innerHTML = STATE.inbound.slice(-4).reverse().map(i => `
         <div class="log-entry">
             <b>${i.label}</b>
             <span class="amount-in">+${i.amount.toLocaleString()}</span>
@@ -280,17 +300,12 @@ function getEngTier(xp) {
     return "INDUSTRIAL MAGNATE";
 }
 
-function addManualEntry() {
-    const name = document.getElementById('item-name').value;
-    const cost = parseFloat(document.getElementById('item-cost').value);
-    const cat  = document.getElementById('item-category').value;
-    if (name && !isNaN(cost)) {
-        STATE.outbound.push({ name, cost, cat, timestamp: Date.now() });
-        STATE.balance -= cost;
-        syncUI();
-        document.getElementById('item-name').value = "";
-        document.getElementById('item-cost').value = "";
-    }
+function getNextTierXP(xp) {
+    if (xp < 200)  return 200;
+    if (xp < 500)  return 500;
+    if (xp < 1000) return 1000;
+    if (xp < 2500) return 2500;
+    return null;
 }
 
 function generateWeeklyReport() {
@@ -318,9 +333,10 @@ function generateWeeklyReport() {
 }
 
 function exportBlueprint() {
-    let report = `APEX // FLUX - ENGINEERING LOG\nGenerated: ${new Date().toLocaleString()}\nTier: ${getEngTier(STATE.xp)}\nAssets: KES ${STATE.balance.toLocaleString()}\n-------------------------------------------\n\n[OUTBOUND]\n`;
+    let report = `APEX // FLUX — ENGINEERING LOG\nGenerated: ${new Date().toLocaleString()}\nTier: ${getEngTier(STATE.xp)}\nAssets: KES ${STATE.balance.toLocaleString()}\n-------------------------------------------\n\n[OUTBOUND]\n`;
     STATE.outbound.forEach(i => {
-        report += `${new Date(i.timestamp).toLocaleDateString()} | ${i.name.padEnd(20)} | KES ${i.cost.toLocaleString().padStart(8)} | (${i.cat})\n`;
+        const type = i.commodityType ? i.commodityType : i.cat;
+        report += `${new Date(i.timestamp).toLocaleDateString()} | ${i.name.padEnd(20)} | KES ${i.cost.toLocaleString().padStart(8)} | (${type})\n`;
     });
     const blob = new Blob([report], { type: 'text/plain' });
     const url  = window.URL.createObjectURL(blob);
@@ -332,7 +348,7 @@ function exportBlueprint() {
 
 
 // ================================================================
-//  9. AUTH & NAVIGATION — core functions UNCHANGED, verifyPin updated
+//  9. AUTH & NAVIGATION
 // ================================================================
 let enteredPin = "";
 function inputPin(n)  { if (enteredPin.length < 4) { enteredPin += n; document.getElementById('pin-input').value = "*".repeat(enteredPin.length); } }
@@ -342,11 +358,12 @@ function verifyPin() {
     if (enteredPin === STATE.pin) {
         document.getElementById('guardian-overlay').style.display = 'none';
         document.querySelector('.dashboard-wrapper').style.display = 'flex';
-        checkWeeklyArchive();   // Memory Engine: archive if new week
+        // Run 7-day reset check on every login
+        check7DayReset();
         syncUI();
         updateBudgetProgress();
     } else {
-        alert("DENIED");
+        alert("ACCESS DENIED");
         clearPin();
     }
 }
@@ -363,32 +380,7 @@ function confirmSecureToggle() {
         closeSecureModal();
         document.getElementById('modal-pin').value = "";
         syncUI();
-    } else { alert("INVALID"); }
-}
-
-function initChart() {
-    const canvas = document.getElementById('fluxChart');
-    if (!canvas || fluxChart) return;
-    const ctx  = canvas.getContext('2d');
-    fluxChart  = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels:   [],
-            datasets: [{ borderColor: '#00ff41', data: [], tension: 0.3 }]
-        },
-        options: {
-            plugins: { legend: { display: false } },
-            scales:  { y: { grid: { color: '#111' } } }
-        }
-    });
-    updateChart();
-}
-
-function updateChart() {
-    if (!fluxChart) return;
-    fluxChart.data.labels               = STATE.outbound.slice(-7).map(i => i.name);
-    fluxChart.data.datasets[0].data    = STATE.outbound.slice(-7).map(i => i.cost);
-    fluxChart.update();
+    } else { alert("INVALID PIN"); }
 }
 
 function showModule(id) {
@@ -396,15 +388,16 @@ function showModule(id) {
     document.getElementById('mod-' + id).style.display = 'block';
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     try { event.currentTarget.classList.add('active'); } catch (e) {}
-    // Highlight correct nav button when called programmatically
     const btn = document.getElementById('nav-' + id);
     if (btn) btn.classList.add('active');
+    // Lazy chart init when vortex is opened
+    if (id === 'viz') initChart();
 }
 
 function launchModule(id) {
     document.getElementById('dashboard-view').style.display = 'none';
     document.getElementById('modules-view').style.display   = 'flex';
-    if (id === 'viz') initChart();  // Lazy chart init
+    if (id === 'viz') initChart();
     showModule(id);
 }
 
@@ -416,7 +409,7 @@ function goToDashboard() {
 
 
 // ================================================================
-//  10. BUDGET CONTROL FUNCTION
+//  10. BUDGET CONTROL — UNCHANGED
 // ================================================================
 function setWeeklyTarget() {
     const val = parseFloat(document.getElementById('weekly-target-input').value);
@@ -440,7 +433,6 @@ function updateBudgetProgress() {
     const weekSpend  = STATE.outbound
         .filter(i => i.timestamp > oneWeekAgo)
         .reduce((s, i) => s + i.cost, 0);
-
     const target = STATE.weeklyTarget;
 
     if (spendEl)  spendEl.innerText  = `KES ${weekSpend.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
@@ -449,10 +441,9 @@ function updateBudgetProgress() {
     const pct = target > 0 ? Math.min((weekSpend / target) * 100, 100) : 0;
     barEl.style.width = pct + '%';
 
-    // Traffic-light colour
     if (pct >= 100) {
         barEl.style.background = 'var(--danger)';
-        barEl.style.boxShadow  = '0 0 10px rgba(255,62,62,0.4)';
+        barEl.style.boxShadow  = '0 0 10px rgba(255,49,49,0.4)';
     } else if (pct > 70) {
         barEl.style.background = '#ffaa00';
         barEl.style.boxShadow  = '0 0 8px rgba(255,170,0,0.3)';
@@ -463,7 +454,7 @@ function updateBudgetProgress() {
 
     if (pctEl) pctEl.innerText = target > 0 ? `${pct.toFixed(0)}%` : '--%';
 
-    // Overburn: pulse dashboard borders red
+    // Overburn state
     const dashView = document.getElementById('dashboard-view');
     if (dashView) {
         if (target > 0 && weekSpend > target) {
@@ -476,71 +467,254 @@ function updateBudgetProgress() {
 
 
 // ================================================================
-//  11. MEMORY ENGINE — Weekly Archive (NEW v6.0)
+//  11. VORTEX CHART — Aggregated by day, with placeholder
 // ================================================================
-function getThisWeekSpend() {
-    const oneWeekAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
-    return STATE.outbound
-        .filter(i => i.timestamp > oneWeekAgo)
-        .reduce((s, i) => s + i.cost, 0);
+function get7DaySpendData() {
+    const labels = [];
+    const data   = [];
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const dayStr   = d.toLocaleDateString();
+        const daySpend = STATE.outbound
+            .filter(item => new Date(item.timestamp).toLocaleDateString() === dayStr)
+            .reduce((s, item) => s + item.cost, 0);
+        data.push(daySpend);
+        labels.push(d.toLocaleDateString('en-KE', { weekday: 'short', day: 'numeric' }));
+    }
+    return { labels, data };
 }
 
-function getTopCategory(entries) {
+function initChart() {
+    const canvas      = document.getElementById('fluxChart');
+    const placeholder = document.getElementById('vortex-placeholder');
+    if (!canvas) return;
+
+    const { labels, data } = get7DaySpendData();
+    const hasData = data.some(v => v > 0);
+
+    if (!hasData) {
+        // Show placeholder, hide canvas
+        canvas.style.display = 'none';
+        if (placeholder) placeholder.style.display = 'flex';
+        return;
+    }
+
+    // Has data — hide placeholder, show canvas
+    canvas.style.display = 'block';
+    if (placeholder) placeholder.style.display = 'none';
+
+    if (fluxChart) {
+        // Update existing chart
+        fluxChart.data.labels            = labels;
+        fluxChart.data.datasets[0].data  = data;
+        fluxChart.update();
+        return;
+    }
+
+    const ctx = canvas.getContext('2d');
+    fluxChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [{
+                label:           'KES Spent',
+                borderColor:     '#00ff41',
+                backgroundColor: 'rgba(0,255,65,0.06)',
+                data,
+                tension:         0.3,
+                pointBackgroundColor: '#00ff41',
+                pointRadius:     4,
+                fill:            true
+            }]
+        },
+        options: {
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                x: {
+                    grid:  { color: 'rgba(255,255,255,0.04)' },
+                    ticks: { color: '#88929b', font: { family: 'Rajdhani', size: 11 } }
+                },
+                y: {
+                    grid:  { color: 'rgba(255,255,255,0.04)' },
+                    ticks: { color: '#88929b', font: { family: 'Rajdhani', size: 11 }, callback: v => 'KES ' + v.toLocaleString() }
+                }
+            }
+        }
+    });
+}
+
+function updateChart() {
+    if (!fluxChart) return;
+    const { labels, data } = get7DaySpendData();
+    fluxChart.data.labels           = labels;
+    fluxChart.data.datasets[0].data = data;
+    fluxChart.update();
+}
+
+
+// ================================================================
+//  12. MANUAL ENTRY — TWO-STEP COMMODITY FLOW
+// ================================================================
+function openCommodityModal() {
+    const name = document.getElementById('item-name').value.trim();
+    const cost = parseFloat(document.getElementById('item-cost').value);
+    const cat  = document.getElementById('item-category').value;
+
+    if (!name || isNaN(cost) || cost <= 0) {
+        alert("Enter item label and cost first.");
+        return;
+    }
+
+    // Store pending entry
+    _pendingEntry = { name, cost, cat };
+
+    // Clear and show modal
+    document.getElementById('commodity-input').value = '';
+    document.getElementById('commodity-modal').style.display = 'flex';
+    setTimeout(() => document.getElementById('commodity-input').focus(), 100);
+}
+
+function setCommodity(type) {
+    document.getElementById('commodity-input').value = type;
+}
+
+function closeCommodityModal() {
+    document.getElementById('commodity-modal').style.display = 'none';
+    _pendingEntry = null;
+}
+
+function confirmManualEntry() {
+    if (!_pendingEntry) return;
+
+    const commodityType = document.getElementById('commodity-input').value.trim() || _pendingEntry.cat;
+
+    STATE.outbound.push({
+        name:          _pendingEntry.name,
+        cost:          _pendingEntry.cost,
+        cat:           _pendingEntry.cat,
+        commodityType: commodityType,
+        timestamp:     Date.now()
+    });
+    STATE.balance -= _pendingEntry.cost;
+    STATE.xp = Math.max(0, STATE.xp); // no XP change on manual entry
+
+    // Clear form
+    document.getElementById('item-name').value  = '';
+    document.getElementById('item-cost').value  = '';
+    document.getElementById('commodity-input').value = '';
+    document.getElementById('commodity-modal').style.display = 'none';
+    _pendingEntry = null;
+
+    syncUI();
+}
+
+// Legacy addManualEntry kept as fallback (called by nothing in v7 but preserved)
+function addManualEntry() {
+    openCommodityModal();
+}
+
+
+// ================================================================
+//  13. 7-DAY VORTEX RESET — Archive + Efficiency Grade
+// ================================================================
+function check7DayReset() {
+    const lastReset = STATE.lastReset;
+    const sevenDays = 7 * 24 * 60 * 60 * 1000;
+
+    if (Date.now() > lastReset + sevenDays) {
+        executeVortexReset();
+    }
+}
+
+function calculateEfficiencyGrade() {
+    const total  = STATE.outbound.reduce((s, i) => s + i.cost, 0);
+    if (STATE.weeklyTarget <= 0) {
+        // Grade by absolute spending discipline (without a budget)
+        if (total === 0) return { grade: 'A', desc: 'ZERO SPEND — MAXIMUM EFFICIENCY', detail: 'No expenditure this cycle.' };
+        return { grade: 'B', desc: 'OPERATING WITHOUT TARGET', detail: `KES ${total.toLocaleString()} deployed. Set a weekly budget for precise grading.` };
+    }
+    const ratio = total / STATE.weeklyTarget;
+    if (ratio <= 0.70) return { grade: 'A', desc: 'OPERATING WITHIN MARGINS', detail: `Deployed ${(ratio*100).toFixed(0)}% of budget. KES ${(STATE.weeklyTarget - total).toLocaleString()} surplus.` };
+    if (ratio <= 0.90) return { grade: 'B', desc: 'EFFICIENT OPERATIONS', detail: `Deployed ${(ratio*100).toFixed(0)}% of budget — solid week.` };
+    if (ratio <= 1.10) return { grade: 'C', desc: 'MARGINAL PERFORMANCE', detail: `Deployed ${(ratio*100).toFixed(0)}% of budget. Tighten spend next cycle.` };
+    return { grade: 'D', desc: 'OVERBURN — BUDGET EXCEEDED', detail: `KES ${(total - STATE.weeklyTarget).toLocaleString()} over target. Recalibrate immediately.` };
+}
+
+function getTopCategory() {
     const cats = {};
-    entries.forEach(i => { cats[i.cat] = (cats[i.cat] || 0) + i.cost; });
+    STATE.outbound.forEach(i => {
+        const key = i.commodityType || i.cat || 'General';
+        cats[key] = (cats[key] || 0) + i.cost;
+    });
     const sorted = Object.entries(cats).sort((a, b) => b[1] - a[1]);
     return sorted[0] ? sorted[0][0] : 'N/A';
 }
 
-function checkWeeklyArchive() {
-    const history = STATE.apexHistory;
-    const now     = new Date();
+function executeVortexReset() {
+    // 1. Calculate grade BEFORE wiping
+    const gradeData  = calculateEfficiencyGrade();
+    const totalSpent = STATE.outbound.reduce((s, i) => s + i.cost, 0);
 
-    if (history.length === 0) {
-        // First session — record current week start, no snapshot yet
-        return;
-    }
-
-    const lastEntry  = history[history.length - 1];
-    const lastDate   = new Date(lastEntry.week_start);
-    const daysSince  = (now - lastDate) / (1000 * 60 * 60 * 24);
-
-    if (daysSince >= 7) {
-        archiveCurrentWeek();
-    }
-}
-
-function archiveCurrentWeek() {
-    const now        = Date.now();
-    const oneWeekAgo = now - (7 * 24 * 60 * 60 * 1000);
-    const weekData   = STATE.outbound.filter(i => i.timestamp > oneWeekAgo);
-    const total      = weekData.reduce((s, i) => s + i.cost, 0);
-    const topCat     = getTopCategory(weekData);
-
+    // 2. Archive snapshot
     const snapshot = {
-        week_start:  new Date(oneWeekAgo).toISOString(),
-        total_spent: total,
-        budget_met:  STATE.weeklyTarget > 0 ? total <= STATE.weeklyTarget : null,
-        top_category: topCat
+        week_start:   new Date(STATE.lastReset).toISOString(),
+        total_spent:  totalSpent,
+        budget_met:   STATE.weeklyTarget > 0 ? totalSpent <= STATE.weeklyTarget : null,
+        top_category: getTopCategory(),
+        grade:        gradeData.grade
     };
-
     STATE.apexHistory.push(snapshot);
-
-    // Keep last 12 weeks max
-    if (STATE.apexHistory.length > 12) {
-        STATE.apexHistory = STATE.apexHistory.slice(-12);
-    }
-
+    if (STATE.apexHistory.length > 12) STATE.apexHistory = STATE.apexHistory.slice(-12);
     localStorage.setItem('apex_history', JSON.stringify(STATE.apexHistory));
-    console.log('[MEMORY ENGINE] Weekly snapshot archived:', snapshot);
+
+    // 3. Wipe active ledger
+    STATE.outbound = [];
+    STATE.inbound  = [];
+
+    // 4. Update reset timestamp
+    STATE.lastReset = Date.now();
+    localStorage.setItem('flux_last_reset', STATE.lastReset.toString());
+    localStorage.setItem('flux_out', JSON.stringify([]));
+    localStorage.setItem('flux_in',  JSON.stringify([]));
+
+    // 5. XP bonus for completing a cycle
+    STATE.xp += 25;
+
+    // 6. Show grade notification
+    showEfficiencyGrade(gradeData);
+}
+
+function showEfficiencyGrade(gradeData) {
+    const notif   = document.getElementById('grade-notification');
+    const gradeEl = document.getElementById('grade-value');
+    const descEl  = document.getElementById('grade-desc');
+    const detailEl= document.getElementById('grade-detail');
+
+    gradeEl.textContent  = gradeData.grade;
+    descEl.textContent   = gradeData.desc;
+    detailEl.textContent = gradeData.detail;
+
+    // Colour-code the grade
+    gradeEl.className = 'grade-notif-grade';
+    if (gradeData.grade === 'B') gradeEl.classList.add('grade-b');
+    if (gradeData.grade === 'C') gradeEl.classList.add('grade-c');
+    if (gradeData.grade === 'D') gradeEl.classList.add('grade-d');
+
+    notif.style.display = 'flex';
+}
+
+function dismissGrade() {
+    document.getElementById('grade-notification').style.display = 'none';
 }
 
 
 // ================================================================
-//  12. APEX ADVISOR — Ghost Sidebar (NEW v6.0)
+//  14. LOCAL ADVISOR — Zero API, commodity-type rule engine
 // ================================================================
-let advisorHistory = [];   // In-memory chat history (session only)
-let advisorGreeted = false;
+let advisorHistory = [];
 
 function toggleAdvisor() {
     const panel    = document.getElementById('advisor-panel');
@@ -552,221 +726,171 @@ function toggleAdvisor() {
     fab.classList.toggle('open', !isOpen);
     backdrop.classList.toggle('visible', !isOpen);
 
-    if (!isOpen) {
-        initAdvisorUI();
-        if (STATE.apiKey && !advisorGreeted) {
-            showAdvisorGreeting();
-            advisorGreeted = true;
-        }
-    }
-}
-
-function initAdvisorUI() {
-    const setup = document.getElementById('advisor-setup');
-    const chat  = document.getElementById('advisor-chat');
-    if (STATE.apiKey) {
-        setup.style.display = 'none';
-        chat.style.display  = 'flex';
-    } else {
-        setup.style.display = 'flex';
-        chat.style.display  = 'none';
-    }
-}
-
-function setApiKey() {
-    const input = document.getElementById('api-key-input');
-    const key   = input.value.trim();
-    if (key.length > 10) {
-        STATE.apiKey = key;
-        localStorage.setItem('flux_api_key', key);
-        input.value = '';
-        initAdvisorUI();
-        showAdvisorGreeting();
+    if (!isOpen && !advisorGreeted) {
         advisorGreeted = true;
-    } else {
-        alert('Invalid key format.');
+        // Greeting with 1.5s processing delay
+        showAdvisorTerminal();
+        setTimeout(() => {
+            hideAdvisorTerminal();
+            appendAdvisorMessage('advisor', buildLocalGreeting());
+        }, 1500);
     }
 }
 
-// ─── Greeting — generated locally, no API call ───────────────────
-function buildAdvisorGreeting() {
+function buildLocalGreeting() {
     const thisWeek = getThisWeekSpend();
     const history  = STATE.apexHistory;
     const lastWeek = history.length > 0 ? history[history.length - 1] : null;
-
-    let greeting = '';
+    let   msg      = '';
 
     if (lastWeek && lastWeek.total_spent > 0) {
-        const pctChange  = ((thisWeek - lastWeek.total_spent) / lastWeek.total_spent) * 100;
-        const absPct     = Math.abs(pctChange).toFixed(1);
-        const lastStr    = lastWeek.total_spent.toLocaleString();
+        const pctChange = ((thisWeek - lastWeek.total_spent) / lastWeek.total_spent) * 100;
+        const absPct    = Math.abs(pctChange).toFixed(1);
         if (pctChange <= 0) {
-            greeting = `Yo, you're crushing it — spend is down ${absPct}% vs last week (KES ${lastStr}). That's discipline.`;
+            msg = `Yo, you're crushing it — spend is down ${absPct}% vs last cycle (KES ${lastWeek.total_spent.toLocaleString()}). That's discipline.`;
         } else {
-            greeting = `Heads up — we're ${absPct}% above last week's pace (KES ${lastStr}). Let's recalibrate before this becomes a trend.`;
+            msg = `Heads up — we're ${absPct}% above last cycle's pace (KES ${lastWeek.total_spent.toLocaleString()}). Let's recalibrate before this trends wrong.`;
         }
     } else {
-        greeting = `APEX Advisor online. ${history.length === 0 ? "First session — we're building your baseline." : "Welcome back."} Tier: ${getEngTier(STATE.xp)}.`;
+        msg = `APEX Advisor online. ${history.length === 0 ? "First session — building your baseline." : "Welcome back."} Tier: ${getEngTier(STATE.xp)}.`;
     }
 
-    // Daily safe limit
     if (STATE.weeklyTarget > 0) {
         const remaining = STATE.weeklyTarget - thisWeek;
         if (remaining > 0) {
-            const dayOfWeek  = new Date().getDay(); // 0=Sun
+            const dayOfWeek  = new Date().getDay();
             const daysLeft   = Math.max(7 - dayOfWeek, 1);
             const dailyLimit = Math.floor(remaining / daysLeft);
-            greeting += ` Daily safe limit: KES ${dailyLimit.toLocaleString()}.`;
+            msg += ` Daily safe limit: KES ${dailyLimit.toLocaleString()}.`;
         } else {
-            const over = Math.abs(remaining).toLocaleString();
-            greeting += ` Real talk — you're KES ${over} over budget. Overburn state active.`;
+            msg += ` Real talk — KES ${Math.abs(remaining).toLocaleString()} over budget. Overburn state active.`;
         }
     }
 
-    return greeting;
+    return msg;
 }
 
-function showAdvisorGreeting() {
-    const greeting = buildAdvisorGreeting();
-    appendAdvisorMessage('advisor', greeting);
-}
-
-// ─── Context builder — financial data injected into system prompt ──
-function buildAdvisorContext() {
-    const thisWeek = getThisWeekSpend();
-    const lastWeek = STATE.apexHistory[STATE.apexHistory.length - 1];
-    const remaining = STATE.weeklyTarget > 0 ? STATE.weeklyTarget - thisWeek : null;
-    const dayOfWeek  = new Date().getDay();
-    const daysLeft   = Math.max(7 - dayOfWeek, 1);
-    const dailyLimit = remaining !== null && remaining > 0
-        ? Math.floor(remaining / daysLeft)
-        : null;
-
-    const recentCats = {};
+function getThisWeekSpend() {
     const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-    STATE.outbound.filter(i => i.timestamp > oneWeekAgo).forEach(i => {
-        recentCats[i.cat] = (recentCats[i.cat] || 0) + i.cost;
-    });
-    const topCatEntry = Object.entries(recentCats).sort((a,b) => b[1]-a[1])[0];
-    const topCat = topCatEntry ? `${topCatEntry[0]} (KES ${topCatEntry[1].toLocaleString()})` : 'N/A';
-
-    return `You are APEX, a tactical financial advisor for a young professional in Nairobi, Kenya who uses M-PESA.
-Tone: Direct, supportive, casual-smart — like a savvy friend who knows finance. Use: "Yo", "crushing it", "Heads up", "real talk", "let's lock in", "Overburn", "recalibrate".
-Keep responses to 3-4 sentences max. Be specific with numbers when relevant. Never fabricate data outside what is provided below.
-All computation and data access happens locally — you only receive a context summary.
-
-LIVE FINANCIAL CONTEXT:
-- Balance: KES ${STATE.balance.toLocaleString()}
-- This Week Spend: KES ${thisWeek.toLocaleString()}
-- Weekly Budget: ${STATE.weeklyTarget > 0 ? 'KES ' + STATE.weeklyTarget.toLocaleString() : 'Not set'}
-- Budget Remaining: ${remaining !== null ? 'KES ' + Math.floor(remaining).toLocaleString() : 'N/A'}
-- Daily Safe Limit (${daysLeft} days left): ${dailyLimit ? 'KES ' + dailyLimit.toLocaleString() : 'N/A'}
-- Top Spend Category (this week): ${topCat}
-- Last Week Total: ${lastWeek ? 'KES ' + lastWeek.total_spent.toLocaleString() : 'No history yet'}
-- Last Week Budget Met: ${lastWeek ? (lastWeek.budget_met === null ? 'No budget set' : lastWeek.budget_met ? 'Yes ✓' : 'No ✗') : 'N/A'}
-- XP / Tier: ${STATE.xp} XP — ${getEngTier(STATE.xp)}`;
+    return STATE.outbound.filter(i => i.timestamp > oneWeekAgo).reduce((s, i) => s + i.cost, 0);
 }
 
-// ─── Chat rendering ───────────────────────────────────────────────
-function appendAdvisorMessage(role, text) {
-    const msgs    = document.getElementById('advisor-messages');
+// ─── Local Rule Engine ───────────────────────────────────────────
+function generateLocalResponse(query) {
+    const q          = query.toLowerCase();
+    const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    const weekItems  = STATE.outbound.filter(i => i.timestamp > oneWeekAgo);
+    const thisWeek   = weekItems.reduce((s, i) => s + i.cost, 0);
+
+    // Count commodity types (case-insensitive)
+    const typeCounts = {};
+    weekItems.forEach(i => {
+        const key = (i.commodityType || i.cat || '').toLowerCase().trim();
+        if (key) typeCounts[key] = (typeCounts[key] || 0) + 1;
+    });
+
+    const supperCount    = (typeCounts['supper'] || 0) + (typeCounts['food'] || 0) + (typeCounts['lunch'] || 0) + (typeCounts['dinner'] || 0);
+    const fareCount      = (typeCounts['fare'] || 0) + (typeCounts['transport'] || 0) + (typeCounts['matatu'] || 0);
+    const printCount     = (typeCounts['printing'] || 0) + (typeCounts['print'] || 0);
+    const snackCount     = typeCounts['snack'] || 0;
+    const dataCount      = (typeCounts['data'] || 0) + (typeCounts['airtime'] || 0);
+
+    // ── FOOD / SUPPER ──
+    if (q.includes('food') || q.includes('supper') || q.includes('eat') || q.includes('lunch') || q.includes('dinner')) {
+        return `Observation: Food margins are thin — ${supperCount > 0 ? supperCount + ' food entries' : 'multiple food entries'} detected this cycle. Relocate to Mama Dua Kiosk for an estimated 15% savings. Consider meal prep on Sundays to cut daily spend by KES 50–80.`;
+    }
+    // ── TRANSPORT / FARE ──
+    if (q.includes('fare') || q.includes('transport') || q.includes('matatu') || q.includes('boda') || fareCount > 2) {
+        return `Tactical Tip: Walking to Lurambi Stage saves KES 30/day — KES 210/week. ${fareCount > 2 ? 'You have ' + fareCount + ' fare entries this cycle — high frequency flagged. ' : ''}Activate the walking protocol and an XP efficiency bonus is queued at next cycle reset.`;
+    }
+    // ── PRINTING ──
+    if (q.includes('print') || q.includes('printing') || printCount > 0) {
+        return `Signal: ${printCount > 0 ? printCount + ' printing entries' : 'Printing activity'} logged. Check if CAT reports can be submitted digitally — saves KES 20–50/job. Library printing at KES 5/page is available as an alternative channel.`;
+    }
+    // ── BUDGET / SPEND ──
+    if (q.includes('budget') || q.includes('spend') || q.includes('status') || q.includes('how much')) {
+        const remaining = STATE.weeklyTarget > 0 ? STATE.weeklyTarget - thisWeek : null;
+        if (!remaining) return `No weekly budget armed. Set a target in the Sentry Control card to activate full burn-rate monitoring. Current cycle spend: KES ${thisWeek.toLocaleString()}.`;
+        if (remaining < 0) return `Overburn confirmed — KES ${Math.abs(remaining).toLocaleString()} over budget. Lock down discretionary spend immediately. Only essentials until cycle reset.`;
+        const daysLeft   = Math.max(7 - new Date().getDay(), 1);
+        const dailyLimit = Math.floor(remaining / daysLeft);
+        return `Budget status: KES ${remaining.toLocaleString()} remaining over ${daysLeft} day(s). Daily safe limit: KES ${dailyLimit.toLocaleString()}. Operating within margins — let's keep it locked in.`;
+    }
+    // ── XP / TIER ──
+    if (q.includes('xp') || q.includes('tier') || q.includes('rank') || q.includes('level')) {
+        const next = getNextTierXP(STATE.xp);
+        return `Tier: ${getEngTier(STATE.xp)} at ${STATE.xp} XP. ${next ? 'Next tier at ' + next + ' XP — ' + (next - STATE.xp) + ' to go.' : 'Max tier achieved.'} Consistent weekly under-budget performance is the fastest XP path.`;
+    }
+    // ── DATA / AIRTIME ──
+    if (q.includes('data') || q.includes('airtime') || dataCount > 2) {
+        return `Data/airtime: ${dataCount} entries this cycle. Consider Safaricom's weekly bundles over daily top-ups — typically 20–30% cheaper per MB. Okoa Jahazi is an emergency option only; it compounds cost.`;
+    }
+    // ── SCAN (auto-detect top issue) ──
+    if (supperCount > 3) return `Auto-scan: Food entries dominate this cycle (${supperCount}). Mama Dua Kiosk protocol recommended — 15% margin recovery estimated.`;
+    if (fareCount > 2)  return `Auto-scan: High transport frequency (${fareCount} entries). Walking protocol to Lurambi Stage — KES 30/day, KES ${fareCount * 30} potential recovery.`;
+    if (printCount > 2) return `Auto-scan: ${printCount} printing entries flagged. Digital submission where possible eliminates this spend category entirely.`;
+
+    // ── DEFAULT ──
+    return `Ledger scan complete. Week spend: KES ${thisWeek.toLocaleString()}. ${STATE.weeklyTarget > 0 ? 'Budget utilization: ' + ((thisWeek/STATE.weeklyTarget)*100).toFixed(0) + '%.' : 'No target armed.'} Query: "food", "fare", "printing", "budget", or "xp" for targeted analysis.`;
+}
+
+// ─── Chat wiring ─────────────────────────────────────────────────
+function showAdvisorTerminal() {
+    const msgs = document.getElementById('advisor-messages');
     if (!msgs) return;
-    const isUser  = role === 'user';
+    const el = document.createElement('div');
+    el.id = 'adv-terminal-line';
+    el.className = 'adv-msg adv-advisor';
+    el.innerHTML = `
+        <div class="adv-sender">APEX ADVISOR</div>
+        <div class="adv-terminal">[ PROCESSING MARGINS... ]</div>`;
+    msgs.appendChild(el);
+    msgs.scrollTop = msgs.scrollHeight;
+}
+
+function hideAdvisorTerminal() {
+    const el = document.getElementById('adv-terminal-line');
+    if (el) el.remove();
+}
+
+function appendAdvisorMessage(role, text) {
+    const msgs = document.getElementById('advisor-messages');
+    if (!msgs) return;
     const wrapper = document.createElement('div');
     wrapper.className = `adv-msg adv-${role}`;
     wrapper.innerHTML = `
-        <div class="adv-sender">${isUser ? 'YOU' : 'APEX ADVISOR'}</div>
+        <div class="adv-sender">${role === 'user' ? 'YOU' : 'LOCAL ADVISOR'}</div>
         <div class="adv-bubble">${text}</div>`;
     msgs.appendChild(wrapper);
     msgs.scrollTop = msgs.scrollHeight;
 }
 
-function showAdvisorThinking() {
-    const msgs = document.getElementById('advisor-messages');
-    if (!msgs) return;
-    const el   = document.createElement('div');
-    el.className = 'adv-msg adv-advisor adv-thinking';
-    el.id        = 'adv-thinking';
-    el.innerHTML = `
-        <div class="adv-sender">APEX ADVISOR</div>
-        <div class="adv-bubble">
-            <span class="thinking-dots">
-                <span></span><span></span><span></span>
-            </span>
-        </div>`;
-    msgs.appendChild(el);
-    msgs.scrollTop = msgs.scrollHeight;
-}
-
-function hideAdvisorThinking() {
-    const el = document.getElementById('adv-thinking');
-    if (el) el.remove();
-}
-
-// ─── Send message to Anthropic API ───────────────────────────────
-async function sendAdvisorMessage() {
+function sendAdvisorMessage() {
     const inputEl = document.getElementById('advisor-input');
     const userMsg = inputEl ? inputEl.value.trim() : '';
     if (!userMsg) return;
 
-    if (!STATE.apiKey) {
-        initAdvisorUI(); // Show setup
-        return;
-    }
-
-    inputEl.value = '';
+    inputEl.value    = '';
     inputEl.disabled = true;
 
     appendAdvisorMessage('user', userMsg);
-    advisorHistory.push({ role: 'user', content: userMsg });
+    advisorHistory.push(userMsg);
 
-    // Cap history to last 10 turns to save tokens
-    if (advisorHistory.length > 10) {
-        advisorHistory = advisorHistory.slice(-10);
-    }
+    // 1.5s terminal processing delay
+    showAdvisorTerminal();
+    setTimeout(() => {
+        hideAdvisorTerminal();
+        const response = generateLocalResponse(userMsg);
+        appendAdvisorMessage('advisor', response);
+        inputEl.disabled = false;
+        inputEl.focus();
+    }, 1500);
+}
 
-    showAdvisorThinking();
 
-    const systemPrompt = buildAdvisorContext();
-
-    try {
-        const response = await fetch('https://api.anthropic.com/v1/messages', {
-            method: 'POST',
-            headers: {
-                'Content-Type':                             'application/json',
-                'x-api-key':                               STATE.apiKey,
-                'anthropic-version':                       '2023-06-01',
-                'anthropic-dangerous-direct-browser-access': 'true'
-            },
-            body: JSON.stringify({
-                model:      'claude-sonnet-4-20250514',
-                max_tokens: 300,
-                system:     systemPrompt,
-                messages:   advisorHistory
-            })
-        });
-
-        const data  = await response.json();
-
-        if (!response.ok) {
-            const errMsg = data.error?.message || `API error ${response.status}`;
-            hideAdvisorThinking();
-            appendAdvisorMessage('advisor', `Signal lost: ${errMsg}. Check your API key.`);
-            inputEl.disabled = false;
-            return;
-        }
-
-        const reply = data.content?.[0]?.text || "Signal lost. Try again.";
-        advisorHistory.push({ role: 'assistant', content: reply });
-        hideAdvisorThinking();
-        appendAdvisorMessage('advisor', reply);
-
-    } catch (err) {
-        hideAdvisorThinking();
-        appendAdvisorMessage('advisor', `Network error. Check your connection and try again.`);
-        console.error('[ADVISOR] fetch error:', err);
-    } finally {
-        if (inputEl) inputEl.disabled = false;
-        if (inputEl) inputEl.focus();
-    }
+// ================================================================
+//  15. MEMORY ENGINE — Weekly Archive helper (used by reset)
+// ================================================================
+function checkWeeklyArchive() {
+    // Kept for compatibility — logic moved into check7DayReset
 }
