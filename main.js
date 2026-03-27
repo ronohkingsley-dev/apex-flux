@@ -74,10 +74,13 @@ function checkFirstRun() {
 
 function setupInputPin(n) {
     const display = document.getElementById('setup-pin-display');
-    const current = display.value.replace(/\*/g, '');
-    if (current.length < 4) {
-        display.value = '*'.repeat(current.length + 1);
-        display.dataset.raw = (display.dataset.raw || '') + n;
+    let rawValue = display.dataset.raw ||'';
+
+    if (rawValue.length <4){
+        rawValue += n;
+        display.dataset.raw = rawValue;
+
+        display.value = '*'.repeat(rawValue.length);
     }
 }
 function setupClearPin() {
